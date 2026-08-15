@@ -35,3 +35,14 @@ node scripts/doctor-contract-check.mjs --impl1 "node lib/bin.js"
 ```
 
 It runs clean / BOM / shadow fixtures and asserts exit codes and envelope shape.
+
+## Check 3: shell-launcher (#1923 approval-bypass channel)
+
+Symptom: a plugin can delegate execution to a user-privileged shell
+(child_process + explorer/start/open/powershell/cmd), bypassing approval and
+workspace-write limits.
+
+Diagnostic: `shell-launcher: warn` naming the file and pattern. Approval is
+consent UX, not an OS boundary — an OS-level sandbox (restricted token /
+container) is the real enforcement. Confirm such channels are allowlisted or
+sandboxed before shipping.
