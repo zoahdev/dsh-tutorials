@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started with DeepSeek Harness · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>Getting Started with DeepSeek Harness: Install, Run, and Chat</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · Every command below was tested on Windows (Node 24, pnpm 11)</p>
+</blockquote>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#what-is-deepseek-harness">What is DeepSeek Harness?</a></li>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#option-1-one-line-npm-start-recommended">Option 1: One-line npm start (recommended)</a></li>
+<li><a href="#option-2-run-from-source">Option 2: Run from source</a></li>
+<li><a href="#your-first-chat-configure-a-model">Your first chat: configure a model</a></li>
+<li><a href="#web-ui-overview">Web UI overview</a></li>
+<li><a href="#common-pitfalls-all-tested">Common pitfalls (all tested)</a></li>
+<li><a href="#faq">FAQ</a></li>
+</ul>
+<h2>What is DeepSeek Harness?</h2>
+<p>DeepSeek Harness (<code>dsh</code>) is the first agent product open-sourced by DeepSeek (2026-08-13, MIT). It is <strong>not a model</strong> — it is the infrastructure that lets a model use tools, run tasks, and collaborate with developers. Its core design is &quot;everything is a plugin&quot;, powered by Cordis.</p>
+<blockquote>
+<p>Repo: <a href="https://github.com/deepseek-ai/deepseek-harness">https://github.com/deepseek-ai/deepseek-harness</a>
+Status: developer preview v0.1, iterating fast, <strong>breaking changes expected</strong> (official warning).</p>
+</blockquote>
+<h2>Requirements</h2>
+<ul>
+<li>Node.js <code>^22.19.0 || &gt;=24.0.0</code> (official)</li>
+<li>pnpm (10+; the repo uses 11.x)</li>
+<li>A DeepSeek API key (for chat and web search)</li>
+</ul>
+<p>Verify:</p>
+<pre><code class="language-sh">node -v
+pnpm -v
+</code></pre>
+<h2>Option 1: One-line npm start (recommended)</h2>
+<pre><code class="language-sh">npx @deepseek-ai/dsh web
+</code></pre>
+<p>Tested output (dsh 0.1.0-rc.6):</p>
+<pre><code class="language-text">dsh web: http://127.0.0.1:3080
+</code></pre>
+<p>Open <a href="http://127.0.0.1:3080">http://127.0.0.1:3080</a>. If port 3080 is busy:</p>
+<pre><code class="language-sh">npx @deepseek-ai/dsh web --port 4099
+</code></pre>
+<h2>Option 2: Run from source</h2>
+<pre><code class="language-sh">git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build
+pnpm dsh web
+</code></pre>
+<p><code>pnpm install</code> takes a few minutes (large pnpm workspace). When running from source, the CLI boots <code>apps/cli/src/bin.ts</code> through tsx.</p>
+<blockquote>
+<p>Read <code>AGENTS.md</code> at the repo root before contributing — it encodes important conventions (registrations are effects, run targeted checks before pushing, etc.).</p>
+</blockquote>
+<h2>Your first chat: configure a model</h2>
+<ol>
+<li>Open <strong>Providers / Models</strong> in the UI.</li>
+<li>The default model is <code>deepseek-v4-flash</code> (provider <code>deepseek-official</code>).</li>
+<li>Enter your DeepSeek API key, or set it before starting:</li>
+</ol>
+<pre><code class="language-sh"># PowerShell
+$env:DEEPSEEK_API_KEY = &quot;sk-your-key&quot;
+</code></pre>
+<ol start="4">
+<li>Start a session and ask something like: &quot;Introduce yourself and list the tools you can use.&quot;</li>
+</ol>
+<p>Without a key the UI opens but chat fails with an auth error — expected behavior, not a bug.</p>
+<h2>Web UI overview</h2>
+<ul>
+<li><strong>Sessions</strong>: state (todos, plans, file changes) is isolated per session.</li>
+<li><strong>Tool cards</strong>: tools declare pending/completed cards (<code>generic</code>, <code>terminal</code>, <code>diff</code>, <code>search</code>, <code>web</code>) via <code>presentCall</code>/<code>presentResult</code>.</li>
+<li><strong>Models</strong>: pick providers/models, including OpenAI-compatible endpoints.</li>
+<li><strong>Timezone</strong>: the browser attaches its IANA zone to each request, so &quot;today/tomorrow&quot; is interpreted in your zone.</li>
+</ul>
+<h2>Common pitfalls (all tested)</h2>
+<h3>1. Port 3080 already in use</h3>
+<pre><code class="language-text">listen EADDRINUSE: address already in use 127.0.0.1:3080
+</code></pre>
+<p>Fix: <code>--port 0</code> (OS picks a free port) or <code>--port 4099</code>.</p>
+<h3>2. <code>node</code>/<code>pnpm</code> not found</h3>
+<p>Install Node, then <strong>open a new terminal</strong>. Enable pnpm with <code>corepack enable</code> or <code>npm install -g pnpm</code>.</p>
+<h3>3. Version mismatch on npm</h3>
+<p>Community plugins must target the current release train <code>0.1.0-rc.6</code>. The npm <code>latest</code> tag of <code>@deepseek-ai/dsh-tools</code> still points at <code>0.0.1-rc.1</code>, whose peer <code>@deepseek-ai/dsh-user-approval@0.0.1-rc.1</code> depends on the <strong>unpublished</strong> <code>@deepseek-ai/dsh-type-meta</code> — a standalone install 404s. Pin <code>^0.1.0-rc.6</code>.</p>
+<h3>4. Git plugin installs need build permission</h3>
+<p><code>dsh plugin add github:owner/repo</code> runs the package&#39;s <code>prepare</code> script; pnpm refuses by default. <code>dsh</code> prints the exact <code>allowBuilds:</code> line to add to the profile&#39;s <code>pnpm-workspace.yaml</code>. Only allow it for source you trust.</p>
+<h2>FAQ</h2>
+<p><strong>Q: Does dsh need a GPU?</strong> No. It calls the DeepSeek API (or any OpenAI-compatible provider).</p>
+<p><strong>Q: Does the official repo accept PRs?</strong> Not yet — see CONTRIBUTING.md. Discussions, plugins, tutorials, and answering questions are the official contribution paths.</p>
+<p><strong>Q: <code>web</code> vs <code>--profile web</code>?</strong> <code>dsh web</code> is an alias of <code>dsh --profile web</code>. Use <code>dsh plugin --profile web add &lt;pkg&gt;</code> to install plugins into the web profile.</p>
+<p>Next: <a href="./en-02-architecture.md">Understanding dsh Architecture: Everything is a Plugin and Cordis</a></p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
