@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One-Minute Repo Due Diligence · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a>
+</header>
+<div class="wrap">
+<h1>One-Minute Due Diligence on Any GitHub Repo: dsh-github-intelligence in Action</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · All output below is real GitHub API data</p>
+</blockquote>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#install-and-go">Install and go</a></li>
+<li><a href="#three-prompts-you-will-actually-use">Three prompts you will actually use</a></li>
+<li><a href="#what-real-output-looks-like">What real output looks like</a></li>
+<li><a href="#the-seven-tools">The seven tools</a></li>
+<li><a href="#why-it-is-rate-limit-friendly">Why it is rate-limit friendly</a></li>
+<li><a href="#pitfall-the-issues-endpoint-mixes-in-pull-requests">Pitfall: the issues endpoint mixes in pull requests</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul>
+<h2>Install and go</h2>
+<pre><code class="language-sh">dsh plugin --profile web add github:zoahdev/dsh-github-intelligence
+</code></pre>
+<p>Restart <code>dsh web</code> and just ask. No API key needed (60 requests/hour anonymous; the plugin&#39;s 60s TTL cache makes that budget go far).</p>
+<h2>Three prompts you will actually use</h2>
+<ol>
+<li>&quot;Give me a full report on <code>deepseek-ai/deepseek-harness</code>.&quot;</li>
+<li>&quot;What open issues does <code>ollama/ollama</code> have right now?&quot;</li>
+<li>&quot;Compare the top 5 TypeScript agent frameworks by stars.&quot;</li>
+</ol>
+<h2>What real output looks like</h2>
+<p>This is the real <code>github_repo_report</code> output for <code>deepseek-ai/deepseek-harness</code> on 2026-08-15:</p>
+<pre><code class="language-text"># deepseek-ai/deepseek-harness
+deepseek-ai/deepseek-harness — DeepSeek Harness: Everything is a Plugin.
+Stars: 98472 · Forks: 9214 · Open issues: 0 · Default branch: master
+Language: TypeScript · License: MIT · Pushed: 2026-08-13
+https://github.com/deepseek-ai/deepseek-harness
+
+Latest release: none
+Open issues: 0
+
+Recent commits:
+- 47f9438 Merge pull request #2519 from deepseek-harness/feat/npm-public (imccyu)
+- abe560f release(dsh): 0.1.0-rc.5 (imccyu)
+- 8c1e8d9 build(release): publish the dsh family publicly (imccyu)
+- f26a6f6 Merge pull request #2520 from deepseek-harness/docs/paper (Tianyi Cui)
+- 124aa5f Merge pull request #2521 from deepseek-harness/release/dsh-0.1.0-rc.3 (imccyu)
+
+Top contributors: 1. tianyicui (5235) · 2. LegGasai (1361) · 3. imccyu (1168) · 4. Chinesezjc (587) · 5. turtle1999 (585)
+</code></pre>
+<p>One question = full overview + latest release + open issues + recent commits + top contributors. That is due diligence.</p>
+<h2>The seven tools</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>github_repo</code></td>
+<td>Full overview (topics, default branch, archived status)</td>
+</tr>
+<tr>
+<td><code>github_releases</code></td>
+<td>Recent releases with body previews</td>
+</tr>
+<tr>
+<td><code>github_issues</code></td>
+<td>Issues by state</td>
+</tr>
+<tr>
+<td><code>github_pulls</code></td>
+<td>Pull requests by state (merge status included)</td>
+</tr>
+<tr>
+<td><code>github_contributors</code></td>
+<td>Top contributors by commit count</td>
+</tr>
+<tr>
+<td><code>github_search</code></td>
+<td>Repository search by stars or last update</td>
+</tr>
+<tr>
+<td><code>github_repo_report</code></td>
+<td>All of the above in one canonical answer</td>
+</tr>
+</tbody></table>
+<h2>Why it is rate-limit friendly</h2>
+<p>The anonymous GitHub API allows 60 requests/hour. Every endpoint in this plugin has a 60s TTL cache: ask for the same repo report three times in a row and only the first costs 4 requests. The deep report runs its sub-calls in parallel and reuses the cache instead of stacking cost.</p>
+<h2>Pitfall: the issues endpoint mixes in pull requests</h2>
+<p>GitHub&#39;s <code>/issues</code> endpoint returns pull requests by default. The plugin filters them out by the <code>pull_request</code> field in <code>listIssues</code> — this is the difference between &quot;integrating&quot; and &quot;calling an API&quot;: same surface, clean data.</p>
+<h2>Next steps</h2>
+<ul>
+<li>Source and verification: <a href="https://github.com/zoahdev/dsh-github-intelligence">zoahdev/dsh-github-intelligence</a></li>
+<li>More tutorials: <a href="./README.md">index</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
