@@ -25,6 +25,24 @@
 
 pnpm 的"静默"最坑：插件 `apply()` 里 `import { defineTool }` 链到了旧版，如果旧版没有新 API，报错出现在 agent 第一次调工具时，而不是安装时。
 
+## 2026-08-15 实测：npm 的 latest 标签本身就是个坑
+
+`@deepseek-ai/dsh-tools` 在 npm 上的 dist-tags 实测：
+
+```text
+latest: 0.0.1-rc.1
+next:   0.1.0-rc.6
+```
+
+也就是说，**裸装** `npm install @deepseek-ai/dsh-tools`（或 pnpm 因 peer 自动安装）拿到的是 `0.0.1-rc.1`，而不是我们一直在用的 `0.1.0-rc.6`——`0.0.x` 根本不满足插件 peer 的 `^0.1.0-rc.6`，这就是大量 ERESOLVE / peer conflict 的真正来源之一。
+
+插件/宿主都要显式装：
+
+```sh
+pnpm add @deepseek-ai/dsh-tools@next   # 0.1.0-rc.6
+# 或统一用 dsh 官方渠道安装 dsh@0.1.0-rc.6
+```
+
 ## 三层防护（模板怎么做的）
 
 1. **peer 声明**：只写实测过的范围 `^0.1.0-rc.6`，不假装兼容更宽；
