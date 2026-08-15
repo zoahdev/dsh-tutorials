@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用 dsh-plugin-doctor 给插件做体检 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a>
+</header>
+<div class="wrap">
+<h1>用 dsh-plugin-doctor 给你的插件做体检</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 全部命令实测于 Windows（Node 24 / pnpm 11）</p>
+</blockquote>
+<h2>目录</h2>
+<ul>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BD%93%E6%A3%80">为什么需要体检</a></li>
+<li><a href="#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B">快速开始</a></li>
+<li><a href="#%E6%A3%80%E6%9F%A5%E9%A1%B9">检查项</a></li>
+<li><a href="#%E5%AE%8C%E6%95%B4%E4%BD%93%E6%A3%80--full">完整体检：--full</a></li>
+<li><a href="#%E6%8E%A5%E5%85%A5-ci">接入 CI</a></li>
+<li><a href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98">常见问题</a></li>
+</ul>
+<h2>为什么需要体检</h2>
+<p>&quot;插件能加载&quot;不等于&quot;插件能用&quot;。两个真实坑：</p>
+<ol>
+<li><strong>manifest 结构错</strong>：<code>dsh.bundle</code>、<code>cordis.patch.yml</code>、<code>prepare</code> 少一个，别人一装就炸；</li>
+<li><strong>peer 版本被静默链错</strong>：pnpm 默认配置可能把旧的 <code>@deepseek-ai/dsh-tools</code> RC 链进你的插件（实测 <code>0.1.0-rc.3</code> 被链给 <code>^0.1.0-rc.6</code>，只有一条泛泛警告，不报错）。</li>
+</ol>
+<p><a href="https://github.com/zoahdev/dsh-plugin-doctor">dsh-plugin-doctor</a> 把这两类问题变成&quot;本地一跑就知道&quot;。</p>
+<h2>快速开始</h2>
+<pre><code class="language-sh">git clone https://github.com/zoahdev/dsh-plugin-doctor.git
+cd dsh-plugin-doctor
+pnpm install
+pnpm build
+
+# 对目标插件目录做快速体检
+node lib/bin.js /path/to/my-plugin
+</code></pre>
+<p>输出示例：</p>
+<pre><code class="language-text">[PASS] manifest: my-plugin@1.0.0 bundle manifest ok
+[PASS] patch: 1 plugin row(s): my-hello
+[WARN] entry: entry lib/index.js not built yet (run pnpm install &amp;&amp; pnpm run build)
+[PASS] files: ships: lib, cordis.patch.yml
+✅ ALL CHECKS PASSED
+</code></pre>
+<p>退出码：全部通过为 <code>0</code>，否则为 <code>1</code>。</p>
+<h2>检查项</h2>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>验证内容</th>
+<th>默认</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>manifest</code></td>
+<td><code>package.json</code> + <code>dsh.bundle</code> + <code>dsh.bundle.patch</code> + <code>prepare</code> + <code>main</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>patch</code></td>
+<td><code>cordis.patch.yml</code> 合法且至少一条带 <code>id</code> 的 <code>insert</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>entry</code></td>
+<td><code>main</code> 指向的文件存在</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>files</code></td>
+<td>声明了 <code>files</code> 白名单</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td><code>pnpm run build</code> 真实执行</td>
+<td><code>--build</code></td>
+</tr>
+<tr>
+<td><code>pack</code>+<code>install</code></td>
+<td>打包 → 装进全新 DSH profile → <code>--dump-config</code> 确认插件 id</td>
+<td><code>--full</code></td>
+</tr>
+</tbody></table>
+<h2>完整体检：--full</h2>
+<pre><code class="language-sh">node lib/bin.js --full /path/to/my-plugin
+</code></pre>
+<p>这是最接近&quot;别人机器上安装&quot;的本地模拟：</p>
+<pre><code class="language-text">[PASS] manifest: dsh-plugin-template@0.1.0 bundle manifest ok
+[PASS] patch: 1 plugin row(s): template-hello
+[PASS] entry: entry lib/index.js exists
+[PASS] files: ships: lib, cordis.patch.yml, README.md, LICENSE
+[PASS] pack: packed dsh-plugin-template-0.1.0.tgz
+[PASS] install: plugin id(s) present in composed config: template-hello
+✅ ALL CHECKS PASSED
+</code></pre>
+<h2>接入 CI</h2>
+<pre><code class="language-sh">node lib/bin.js --json ./my-plugin
+</code></pre>
+<p><code>--json</code> 输出机器可读报告 + 退出码，直接塞进 GitHub Actions：</p>
+<pre><code class="language-yaml">- run: node /path/to/dsh-plugin-doctor/lib/bin.js --build --json ./my-plugin
+</code></pre>
+<h2>常见问题</h2>
+<p><strong>Q：<code>entry</code> 报 WARN？</strong> 插件还没构建：先 <code>pnpm install &amp;&amp; pnpm run build</code>。</p>
+<p><strong>Q：<code>manifest</code> 报 FAIL？</strong> 对照<a href="https://github.com/deepseek-ai/deepseek-harness/blob/HEAD/docs/user/develop/basic/publish.md">官方发布指南</a>补 <code>dsh.bundle</code> 与 <code>prepare</code>。</p>
+<p><strong>Q：<code>install</code> 报 FAIL？</strong> 插件 id 没进组合配置，多半是 <code>cordis.patch.yml</code> 的 <code>id</code> 与期望不符，或 peer 版本不兼容（升级宿主到 0.1.0-rc.6+ 再试）。</p>
+<h2>相关资源</h2>
+<ul>
+<li>仓库：<a href="https://github.com/zoahdev/dsh-plugin-doctor">zoahdev/dsh-plugin-doctor</a></li>
+<li>配套模板：<a href="https://github.com/zoahdev/dsh-plugin-template">zoahdev/dsh-plugin-template</a>（CI 已内置真实工具调用冒烟）</li>
+<li>提案来源：<a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1629">RFC #1629</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
