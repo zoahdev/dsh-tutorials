@@ -45,6 +45,10 @@
 | [en-15-retrieval-efficiency.md](./en-15-retrieval-efficiency.md) | Efficient retrieval: a tools-first AGENTS.md contract |
 | [en-16-self-evolution.md](./en-16-self-evolution.md) | Let agents evolve: dsh-rule-evolve in practice |
 | [en-17-growth-report.md](./en-17-growth-report.md) | Make agent growth visible: the growth report |
+| [zh-18-lan-deploy.md](./zh-18-lan-deploy.md) | 内网部署 dsh web：非安全上下文崩溃的根因与修法 |
+| [en-18-lan-deploy.md](./en-18-lan-deploy.md) | LAN deployment: insecure-context crash root cause + fix |
+| [zh-19-compaction-cache.md](./zh-19-compaction-cache.md) | compaction 缓存击穿：为什么每次自动压缩都多付钱 |
+| [en-19-compaction-cache.md](./en-19-compaction-cache.md) | Compaction cache misses: why auto-compaction re-bills |
 
 ## 配套资源
 
