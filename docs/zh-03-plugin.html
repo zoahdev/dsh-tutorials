@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手把手写第一个 dsh 插件：GitHub Release 雷达 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>手把手写第一个 dsh 插件：GitHub Release 雷达</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 本教程的插件已完整实现并实测，源码见 <a href="https://github.com/zoahdev/dsh-github-release-radar">dsh-github-release-radar</a></p>
+</blockquote>
+<h2>目录</h2>
+<ul>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%81%9A%E8%BF%99%E4%B8%AA%E6%8F%92%E4%BB%B6">为什么做这个插件</a></li>
+<li><a href="#%E5%B7%A5%E7%A8%8B%E7%BB%93%E6%9E%84">工程结构</a></li>
+<li><a href="#packagejsonbundle-manifest">package.json：bundle manifest</a></li>
+<li><a href="#cordispatchyml%E5%91%8A%E8%AF%89-dsh-%E5%8A%A0%E8%BD%BD%E8%B0%81">cordis.patch.yml：告诉 dsh 加载谁</a></li>
+<li><a href="#%E6%8F%92%E4%BB%B6%E5%85%A5%E5%8F%A3name--inject--config--apply">插件入口：name / inject / Config / apply</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7%E5%AE%9A%E4%B9%89github_repo-%E6%8B%86%E8%A7%A3">工具定义：github_repo 拆解</a></li>
+<li><a href="#%E8%B8%A9%E5%9D%91value-schema-%E4%B8%8D%E6%94%AF%E6%8C%81%E9%A1%B6%E5%B1%82-required">踩坑：value schema 不支持顶层 required</a></li>
+<li><a href="#http-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8F%96%E6%B6%88%E4%B8%8E%E9%99%90%E6%B5%81">HTTP 客户端：取消与限流</a></li>
+<li><a href="#%E6%B5%8B%E8%AF%95mock-fetch-%E7%9A%84-vitest">测试：mock fetch 的 vitest</a></li>
+<li><a href="#%E6%89%93%E5%8C%85%E5%AE%89%E8%A3%85%E5%8F%91%E5%B8%83">打包、安装、发布</a></li>
+</ul>
+<h2>为什么做这个插件</h2>
+<p>DeepSeek Harness 刚开源时社区插件几乎是空白。选 GitHub 数据有三个理由：</p>
+<ol>
+<li>官方 REST API 匿名可用（60 次/小时），<strong>不需要用户配 API Key</strong>，试用门槛为零；</li>
+<li>dsh 用户都是开发者，Release/Star 数据天然有用；</li>
+<li>效果可演示：问一句&quot;看看 llama.cpp 最近发布了什么&quot;就有直观输出。</li>
+</ol>
+<blockquote>
+<p>设计原则（YAGNI）：只做三个只读工具，不做写操作（提 issue/评论），避免授权和风险问题。</p>
+</blockquote>
+<h2>工程结构</h2>
+<pre><code class="language-text">dsh-github-release-radar/
+├── package.json          # 声明 dsh.bundle 与构建脚本
+├── cordis.patch.yml      # 插件行（bundle 的配置贡献）
+├── tsconfig.json         # strict + NodeNext + declaration
+├── vitest.config.ts
+├── src/
+│   ├── index.ts          # 插件入口 + 3 个工具
+│   └── github.ts         # GitHub REST 客户端
+├── tests/
+│   ├── github.spec.ts    # 客户端测试
+│   └── index.spec.ts     # 注册与工具测试
+└── README.md             # 中英双语
+</code></pre>
+<h2>package.json：bundle manifest</h2>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;dsh-github-release-radar&quot;,
+  &quot;version&quot;: &quot;0.1.0&quot;,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;main&quot;: &quot;lib/index.js&quot;,
+  &quot;types&quot;: &quot;lib/types/index.d.ts&quot;,
+  &quot;scripts&quot;: {
+    &quot;build&quot;: &quot;tsc -p tsconfig.json&quot;,
+    &quot;prepare&quot;: &quot;pnpm run build&quot;,
+    &quot;test&quot;: &quot;vitest run&quot;
+  },
+  &quot;peerDependencies&quot;: {
+    &quot;@deepseek-ai/cordis&quot;: &quot;^4.0.1&quot;,
+    &quot;@deepseek-ai/dsh-tools&quot;: &quot;^0.1.0-rc.6&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;@deepseek-ai/schemastery&quot;: &quot;^3.18.1&quot;
+  },
+  &quot;dsh&quot;: {
+    &quot;bundle&quot;: {
+      &quot;patch&quot;: &quot;./cordis.patch.yml&quot;
+    }
+  }
+}
+</code></pre>
+<p>关键点：</p>
+<ul>
+<li><code>dsh.bundle.patch</code> 声明这个包贡献哪个 patch 层；</li>
+<li><code>prepare</code> 脚本让 <strong>git 安装也能构建</strong>（官方明确要求，git 安装不跑 build 脚本，只跑 prepare）；</li>
+<li>peer 版本务必对齐当前 release train <code>0.1.0-rc.6</code>（见<a href="#%E8%B8%A9%E5%9D%91value-schema-%E4%B8%8D%E6%94%AF%E6%8C%81%E9%A1%B6%E5%B1%82-required">踩坑</a>部分）。</li>
+</ul>
+<h2>cordis.patch.yml：告诉 dsh 加载谁</h2>
+<pre><code class="language-yaml">- insert:
+    - id: github-release-radar
+      name: dsh-github-release-radar
+</code></pre>
+<p><code>name</code> 是 npm 包名（loader 按包名解析 <code>main</code>），不是文件路径。用户可以通过更上层的 patch 给这个 id 追加 <code>config</code>。</p>
+<h2>插件入口：name / inject / Config / apply</h2>
+<pre><code class="language-ts">import type { Context } from &#39;@deepseek-ai/cordis&#39;
+import Schema from &#39;@deepseek-ai/schemastery&#39;
+import { defineTool } from &#39;@deepseek-ai/dsh-tools&#39;
+import { GitHubClient } from &#39;./github.js&#39;
+
+export const name = &#39;github-release-radar&#39;
+export const inject = [&#39;tools&#39;]
+
+export interface Config {
+  githubToken?: string
+  timeoutMs?: number
+  defaultLimit?: number
+  bodyPreviewChars?: number
+  userAgent?: string
+}
+
+export const Config = Schema.object({
+  githubToken: Schema.string(),
+  timeoutMs: Schema.number().default(10_000),
+  defaultLimit: Schema.number().default(5),
+  bodyPreviewChars: Schema.number().default(500),
+  userAgent: Schema.string().default(&#39;dsh-github-release-radar/0.1.0&#39;),
+})
+
+export function apply(ctx: Context, config: Config): void {
+  // 校验正整数配置（非法配置加载时大声失败）
+  for (const tool of defineTools(config)) {
+    ctx.tools.register(tool)
+  }
+}
+</code></pre>
+<h2>工具定义：github_repo 拆解</h2>
+<pre><code class="language-ts">const repo = defineTool({
+  name: &#39;github_repo&#39;,
+  description:
+    &#39;Get the current overview of a public GitHub repository: star count, forks, open issues, &#39;
+    + &#39;primary language, license, description, and last update time.&#39;,
+  parameters: {
+    owner: { type: &#39;string&#39;, required: true, description: &#39;Repository owner, e.g. deepseek-ai.&#39; },
+    repo: { type: &#39;string&#39;, required: true, description: &#39;Repository name, e.g. deepseek-harness.&#39; },
+  },
+  output: {
+    schema: {
+      type: &#39;object&#39;,
+      additionalProperties: false,
+      properties: {
+        fullName: { type: &#39;string&#39;, required: true },
+        description: { oneOf: [{ type: &#39;string&#39; }, { type: &#39;null&#39; }], required: true },
+        stars: { type: &#39;integer&#39;, required: true },
+        forks: { type: &#39;integer&#39;, required: true },
+        openIssues: { type: &#39;integer&#39;, required: true },
+        language: { oneOf: [{ type: &#39;string&#39; }, { type: &#39;null&#39; }], required: true },
+        license: { oneOf: [{ type: &#39;string&#39; }, { type: &#39;null&#39; }], required: true },
+        updatedAt: { oneOf: [{ type: &#39;string&#39; }, { type: &#39;null&#39; }], required: true },
+        htmlUrl: { type: &#39;string&#39;, required: true },
+      },
+    },
+    render: (_args, value) =&gt; [{ type: &#39;text&#39;, text: renderRepo(value) }],
+  },
+  async execute(args, exec) {
+    return await client.getRepo(args.owner, args.repo, exec.signal)
+  },
+  presentCall: (args) =&gt; ({
+    card: &#39;generic&#39;,
+    title: `GitHub repo: ${args.owner}/${args.repo}`,
+    kind: &#39;search&#39;,
+    rawInput: args,
+  }),
+})
+</code></pre>
+<p>几个设计点：</p>
+<ul>
+<li><code>description</code> 等可空字段用 <code>oneOf: [{type:&#39;string&#39;}, {type:&#39;null&#39;}]</code>，让 TS 推断为 <code>string | null</code>，与真实 API 数据一致；</li>
+<li><code>output.schema</code> 声明<strong>规范 JSON 值</strong>，<code>render</code> 只负责模型可读文本；</li>
+<li><code>presentCall</code> 是纯函数，让 UI 在调用发出时显示卡片；</li>
+<li><code>execute</code> 把 <code>exec.signal</code> 透传给 HTTP 客户端，模型取消时请求立即中止。</li>
+</ul>
+<h2>踩坑：value schema 不支持顶层 required</h2>
+<p>写第一个版本时我在 <code>output.schema</code> 里加了 JSON Schema 风格的顶层 <code>required: [...]</code> 数组，运行时报错：</p>
+<pre><code class="language-text">JsonSchemaError: unsupported JSON schema: schema.required is not supported by the value schema DSL
+</code></pre>
+<p><strong>dsh 的 value schema DSL 只支持属性级 <code>required: true</code></strong>，不支持对象级 <code>required</code> 数组。把顶层 <code>required</code> 全部删掉、每个字段保留 <code>required: true</code> 即可。</p>
+<p>另一个生态级大坑：npm 上 <code>@deepseek-ai/dsh-tools</code> 的 latest 指向 <code>0.0.1-rc.1</code>，其 peer <code>@deepseek-ai/dsh-user-approval@0.0.1-rc.1</code> 依赖<strong>未发布</strong>的 <code>@deepseek-ai/dsh-type-meta</code>，独立安装直接 404。务必显式使用 <code>^0.1.0-rc.6</code>。</p>
+<h2>HTTP 客户端：取消与限流</h2>
+<pre><code class="language-ts">private withDeadline(signal: AbortSignal): AbortSignal {
+  return AbortSignal.any([signal, AbortSignal.timeout(this.options.timeoutMs)])
+}
+
+async getRepo(owner: string, repo: string, signal: AbortSignal): Promise&lt;GitHubRepo&gt; {
+  return this.parseRepo(await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, signal))
+}
+</code></pre>
+<p>错误处理要点：</p>
+<ul>
+<li><code>403 + x-ratelimit-remaining: 0</code> → 明确提示&quot;匿名限流，请配置 githubToken&quot;；</li>
+<li><code>404</code> → 提示检查 owner/repo 拼写与仓库是否公开；</li>
+<li><code>401</code> → 提示 token 无效；</li>
+<li>网络异常区分「被取消」「超时」「网络失败」。</li>
+</ul>
+<h2>测试：mock fetch 的 vitest</h2>
+<pre><code class="language-ts">import { afterEach, describe, expect, it, vi } from &#39;vitest&#39;
+import { GitHubClient } from &#39;../src/github.js&#39;
+
+function jsonResponse(body: unknown) {
+  return { ok: true, status: 200, headers: new Headers(), json: async () =&gt; body } as Response
+}
+
+afterEach(() =&gt; vi.unstubAllGlobals())
+
+it(&#39;maps search results with the requested sort order&#39;, async () =&gt; {
+  const fetchMock = vi.fn(async () =&gt; jsonResponse({ items: [/* ... */] }))
+  vi.stubGlobal(&#39;fetch&#39;, fetchMock)
+
+  const hits = await makeClient().searchRepos(&#39;agent framework&#39;, 5, &#39;stars&#39;, new AbortController().signal)
+  expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    &#39;https://api.github.com/search/repositories?q=agent%20framework&amp;sort=stars&amp;order=desc&amp;per_page=5&#39;,
+  )
+  expect(hits[0]).toMatchObject({ fullName: &#39;a/b&#39;, stars: 9 })
+})
+</code></pre>
+<p>用 <code>vi.stubGlobal(&#39;fetch&#39;, ...)</code> 可以完全不联网地测试请求路径、映射和错误分支。本项目共 15 个测试，全部通过。</p>
+<h2>打包、安装、发布</h2>
+<pre><code class="language-sh">pnpm run build
+pnpm test
+pnpm pack    # 生成 dsh-github-release-radar-0.1.0.tgz
+</code></pre>
+<p>安装进 web profile：</p>
+<pre><code class="language-sh">dsh plugin --profile web add ./dsh-github-release-radar-0.1.0.tgz
+dsh web --port 4099
+</code></pre>
+<p>实测：配置层出现在 <code>dsh --profile web --dump-config</code> 里，web 启动成功（HTTP 200），无加载错误。</p>
+<p>发布三步：</p>
+<ol>
+<li>推到 GitHub，仓库加 <strong><code>dsh-plugin</code></strong> 话题（官方发现机制）；</li>
+<li>README 写中英双语 + 验证记录（<code>VERIFICATION.md</code>）；</li>
+<li>可选：<code>pnpm publish</code> 发到 npm，用户即可 <code>dsh plugin add dsh-github-release-radar</code>。</li>
+</ol>
+<p>下一篇：<a href="./zh-04-contributing.md">《在 dsh 生态里被看见：贡献者路线图》</a></p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
