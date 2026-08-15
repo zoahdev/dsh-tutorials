@@ -51,6 +51,14 @@
 <pre><code class="language-sh">node scripts/doctor-contract-check.mjs --impl1 &quot;node lib/bin.js&quot;
 </code></pre>
 <p>It runs clean / BOM / shadow fixtures and asserts exit codes and envelope shape.</p>
+<h2>Check 3: shell-launcher (#1923 approval-bypass channel)</h2>
+<p>Symptom: a plugin can delegate execution to a user-privileged shell
+(child_process + explorer/start/open/powershell/cmd), bypassing approval and
+workspace-write limits.</p>
+<p>Diagnostic: <code>shell-launcher: warn</code> naming the file and pattern. Approval is
+consent UX, not an OS boundary — an OS-level sandbox (restricted token /
+container) is the real enforcement. Confirm such channels are allowlisted or
+sandboxed before shipping.</p>
 
 <footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
 </div>
