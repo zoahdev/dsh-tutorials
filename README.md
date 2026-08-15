@@ -21,6 +21,7 @@
 | [zh-13-market.md](./zh-13-market.md) | 在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战（v0.3） |
 | [zh-14-doctor-triage.md](./zh-14-doctor-triage.md) | dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约 |
 | [zh-15-retrieval-efficiency.md](./zh-15-retrieval-efficiency.md) | 高效代码库检索：AGENTS.md 工具优先约定（#1864 效率反馈） |
+| [zh-16-self-evolution.md](./zh-16-self-evolution.md) | 让 agent 自我进化：dsh-rule-evolve 实战（验证驱动闭环） |
 
 ## English
 
@@ -41,6 +42,7 @@
 | [en-13-market.md](./en-13-market.md) | One-click plugin install inside DSH (in-harness market) |
 | [en-14-doctor-triage.md](./en-14-doctor-triage.md) | doctor triage: profile-shadow / manifest-bom / v1 contract |
 | [en-15-retrieval-efficiency.md](./en-15-retrieval-efficiency.md) | Efficient retrieval: a tools-first AGENTS.md contract |
+| [en-16-self-evolution.md](./en-16-self-evolution.md) | Let agents evolve: dsh-rule-evolve in practice |
 
 ## 配套资源
 
