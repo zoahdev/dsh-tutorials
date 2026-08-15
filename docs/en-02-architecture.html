@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Understanding dsh Architecture · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>Understanding dsh Architecture — English Summary</h1>
+<p>Full Chinese version: <a href="./zh-02-architecture.md">zh-02-architecture.md</a></p>
+<h2>The one-liner</h2>
+<blockquote>
+<p>dsh = Cordis (plugin runtime) + capability packages (tools/llm/fs/shell/web/…) + an event-sourced session layer + a composition mechanism (profile/patch)</p>
+</blockquote>
+<h2>Plugin forms</h2>
+<p>A plugin is a module exporting <code>name</code> and <code>apply(ctx)</code>. Three forms: function (default), object, or a class extending <code>Service</code> (when providing a service to other plugins).</p>
+<h2>Core concepts</h2>
+<ul>
+<li><strong>Context (<code>ctx</code>)</strong>: the registration surface passed to <code>apply</code>. <code>ctx.on</code>, <code>ctx.effect</code>, <code>ctx.inject</code>, and service registries like <code>ctx.tools</code>.</li>
+<li><strong><code>inject</code></strong>: declares required services; Cordis guarantees they are ready before <code>apply</code> runs.</li>
+<li><strong><code>ctx.effect</code></strong>: registers a side effect with a cleanup function; unloads automatically. &quot;Registrations are effects&quot; is an official convention.</li>
+<li><strong><code>defineTool</code></strong>: author-facing DSL for model-facing tools — validated parameters, canonical JSON output schema, pure <code>render</code>, optional <code>presentCall</code>/<code>presentResult</code> cards, and <code>exec.signal</code> cancellation.</li>
+<li><strong>Schemastery <code>Config</code></strong>: schema-validated configuration with defaults; no hardcoded tunables.</li>
+</ul>
+<h2>Composition: bundle / profile / patch</h2>
+<ul>
+<li><strong>bundle</strong>: an npm package with a <code>dsh.bundle</code> manifest contributing a <code>cordis.patch.yml</code>.</li>
+<li><strong>profile</strong>: an ordered, bootable composition under <code>$DSH_HOME/profiles/&lt;name&gt;</code>.</li>
+<li><strong>patch</strong>: YAML patch rows; later layers win by <code>id</code>.</li>
+</ul>
+<p>Order: profile bundles → profile patch → <code>$DSH_HOME</code> patch → CLI <code>--patch</code>.</p>
+<h2>Repo layout (top-level)</h2>
+<p><code>vendor/</code> (vendored Cordis), <code>packages/</code> (<code>@deepseek-ai/dsh-*</code> workspaces: core, api, llm, fs, shell, web, todo, plan, goal, skill, workflow, bundle…), <code>examples/</code> (runnable cordis.yml leaves), <code>docs/</code>, <code>website/</code>.</p>
+<h2>dsh vs MCP</h2>
+<p>Native tools are registered directly via <code>defineTool</code>; MCP tools arrive through <code>@deepseek-ai/dsh-mcp-client</code> and are mapped into the same registry. They are complementary: MCP reuses existing ecosystems, native plugins allow deep customization (cards, policy, session state).</p>
+<h2>Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>harness</td>
+<td>the framework layer an agent runs on</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>Cordis registration surface</td>
+</tr>
+<tr>
+<td>inject</td>
+<td>declared service dependencies</td>
+</tr>
+<tr>
+<td>effect</td>
+<td>side effect with cleanup</td>
+</tr>
+<tr>
+<td>canonical value</td>
+<td>the tool&#39;s JSON result value</td>
+</tr>
+<tr>
+<td>render intent</td>
+<td>UI card kind (generic/terminal/diff/search/web)</td>
+</tr>
+<tr>
+<td>bundle / profile / patch</td>
+<td>distribution unit / bootable composition / overlay</td>
+</tr>
+</tbody></table>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
