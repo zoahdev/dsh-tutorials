@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>在 dsh 生态被看见：24 小时复盘 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./zh-12-visibility.html">在 dsh 生态被看见：24 小时复盘</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a><a href="./en-12-visibility.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>在 dsh 生态被看见：24 小时复盘（5 个仓库 / 195+ 工具 / 23 页教程）</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 全部内容可对照本系列教程与 GitHub 上的真实提交验证</p>
+</blockquote>
+<h2>先说结论</h2>
+<p>开源早期生态里，&quot;出名&quot;没有捷径，但有<strong>可复制的路径</strong>：找官方讨论里被点名缺的东西 → 做出来并给出真实运行证据 → 回应 review 用证据而不是嘴 → 和同赛道工具互相挂链接 → 把知识沉淀成教程。一天下来我们的产出：5 个仓库、195+ 工具、23 页教程、10+ 条官方讨论回复、2 个在途收录 PR。</p>
+<p>诚实声明：star 目前还是 0。渠道全部铺好，等外部审核和流量。这篇文章讲的是&quot;怎么让被看见的概率最大&quot;，不是&quot;刷量&quot;。</p>
+<h2>五件事，按顺序</h2>
+<h3>1. 做官方讨论里&quot;被点名缺&quot;的东西</h3>
+<p>三个需求都是官方讨论直接点名的：</p>
+<ul>
+<li>RFC #1629 要 <code>dsh plugin check</code> → 我们做了 dsh-plugin-doctor；</li>
+<li>#1715 问&quot;缺 dsh-plugin-search&quot; → 我们做了 dsh-plugin-search；</li>
+<li>#1719 提议 <code>dsh doctor</code> → 我们的 <code>--env</code> 把它落地。</li>
+</ul>
+<p>被点名意味着&quot;有人已经证明了这个需求&quot;，你只需要证明&quot;你做了且能用&quot;。</p>
+<h3>2. 每个功能都跑真实 API 冒烟</h3>
+<p>我们的验证哲学：<strong>能加载 ≠ 真能用</strong>。每个新工具都对着真实 API 跑一遍，于是拦下了一串&quot;文档写着公开、实际会挂&quot;的坑：</p>
+<ul>
+<li>Bitbucket Cloud：匿名访问 404/410 → 不收录；</li>
+<li>Maven Central：反复超时 → 不收录；</li>
+<li>Hugging Face <code>/api/tags</code>：401 → 不收录；</li>
+<li>Stack Overflow 必须带 <code>site=stackoverflow</code>（旧工具没带，必 400）→ 修复；</li>
+<li>PR/Issues 被禁用的仓库会让周报工具整体 404 → 单数据面容错。</li>
+</ul>
+<p>这些失败案例本身就是信任资产——比一百句&quot;稳定可靠&quot;更有说服力。</p>
+<h3>3. 回应 review 用证据</h3>
+<p>awesome-dsh-plugin 维护者关闭了我们的 PR #352，理由是&quot;纯 CLI 不算插件&quot;。我们没有争论，而是：</p>
+<ol>
+<li>按维护者的第二条路加了插件外壳（<code>dsh.bundle</code> + <code>cordis.patch.yml</code> + 模型工具 <code>plugin_check</code>）；</li>
+<li>用 CI 证据证明每一条（打包安装 + 真实调用 + 自检）；</li>
+<li>回帖附完整验证输出，请维护者重开。</li>
+</ol>
+<p>维护者后来在另一个话题里独立验证了我们的工具并确认可用——这就是证据的长期回报。</p>
+<h3>4. 和同赛道工具互相挂链接</h3>
+<p>我们的 doctor 和另外两个社区诊断工具（moonquake2004/dsh-doctor、dsh-diagnose skill）不竞争，而是三方互补：预防 / 探针 / 症状理解。互相在 README 和讨论里挂链接，约定统一 JSON schema——一个生态的&quot;组织者&quot;比一个孤立工具更容易被记住。</p>
+<h3>5. 把知识沉淀成教程</h3>
+<p>23 页中英双语教程，全部命令实测：从上手、写插件、发布前体检、peer 版本坑、awesome 榜评审清单、marketplace 发布，到 <code>undefined.prepare</code> 崩溃全家桶的调试。教程是复利资产：你睡觉时它还在被人读。</p>
+<h2>给后来者的 checklist</h2>
+<pre><code class="language-text">[ ] 找到一个官方讨论里被点名、且你能做好的需求
+[ ] 做出可安装产物（npm / github:owner/repo / tarball）
+[ ] 每个功能跑真实 API 冒烟，失败案例写进 README
+[ ] CI 证明：pack → 全新 profile 安装 → 真实工具调用 → web 启动
+[ ] 提交收录（awesome 榜 / marketplace），review 意见用证据回应
+[ ] 和同赛道工具互认互链
+[ ] 写 2-3 篇中英教程沉淀知识
+[ ] 诚实记录未验证的部分
+</code></pre>
+<h2>资源</h2>
+<ul>
+<li>旗舰整合：<a href="https://github.com/zoahdev/dsh-github-intelligence">dsh-github-intelligence</a></li>
+<li>插件医生：<a href="https://github.com/zoahdev/dsh-plugin-doctor">dsh-plugin-doctor</a></li>
+<li>插件搜索：<a href="https://github.com/zoahdev/dsh-plugin-search">dsh-plugin-search</a></li>
+<li>模板：<a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template</a></li>
+<li>教程站：<a href="https://zoahdev.github.io/dsh-tutorials/">https://zoahdev.github.io/dsh-tutorials/</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
