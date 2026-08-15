@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Noticed in the dsh Ecosystem · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>Getting Noticed in the dsh Ecosystem — English Summary</h1>
+<p>Full Chinese version: <a href="./zh-04-contributing.md">zh-04-contributing.md</a></p>
+<h2>Current official stance</h2>
+<p>External PRs are <strong>not accepted yet</strong> (developer preview). The official CONTRIBUTING.md lists other ways to contribute, and the team explicitly monitors GitHub Discussions and allocates resources based on feedback.</p>
+<h2>Four official contribution paths</h2>
+<ol>
+<li><strong>Discussions</strong>: report reproducible bugs, upvote what matters. Reproducibility is mandatory: environment, version, steps, expected vs actual.</li>
+<li><strong>Plugin ecosystem (highest leverage)</strong>: build a plugin you are excited about, add the <code>dsh-plugin</code> topic. The official repo states community packages are no less important than official ones.</li>
+<li><strong>Tutorials and guides</strong>: bilingual content is scarce and valuable; every command must be actually tested.</li>
+<li><strong>Answering questions</strong>: the fastest way to build a reputation.</li>
+</ol>
+<h2>Community channels</h2>
+<ul>
+<li>GitHub Discussions: <a href="https://github.com/deepseek-ai/deepseek-harness/discussions">https://github.com/deepseek-ai/deepseek-harness/discussions</a></li>
+<li>Discord: <a href="https://discord.gg/Ycq5dCaS4">https://discord.gg/Ycq5dCaS4</a></li>
+<li>WeCom (Chinese): QR codes in the official README (add the assistant, fill the survey)</li>
+<li><code>dsh-plugin</code> topic: <a href="https://github.com/topics/dsh-plugin">https://github.com/topics/dsh-plugin</a></li>
+</ul>
+<h2>14-day roadmap</h2>
+<ol>
+<li>Day 1-2: run <code>npx @deepseek-ai/dsh web</code>; read <code>AGENTS.md</code> and dev docs; join communities.</li>
+<li>Day 3-4: build one small, real plugin (see the <a href="./en-03-plugin.md">plugin tutorial</a>); bilingual README; add <code>dsh-plugin</code>.</li>
+<li>Day 5-6: publish getting-started + plugin tutorials.</li>
+<li>Day 7-8: file verified bugs/doc gaps on Discussions (search first to avoid duplicates).</li>
+<li>Day 9-14: keep answering questions, iterate the plugin to v0.2, write a retrospective, share links in Discord/WeCom.</li>
+</ol>
+<h2>Rules</h2>
+<p>No spamming, no duplicate posts, no clickbait. Every claim needs source code or a test as evidence. Expect breaking changes — state the version you tested.</p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
