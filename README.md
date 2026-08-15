@@ -18,6 +18,8 @@
 | [zh-10-marketplace.md](./zh-10-marketplace.md) | 在 DSH Marketplace 发布插件（含 allowBuilds 实测坑） |
 | [zh-11-prepare-crash.md](./zh-11-prepare-crash.md) | 调试 `undefined.prepare` 崩溃全家桶（#1697/#1763 根因与修复） |
 | [zh-12-visibility.md](./zh-12-visibility.md) | 在 dsh 生态被看见：24 小时复盘（可复制 checklist） |
+| [zh-13-market.md](./zh-13-market.md) | 在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战（v0.3） |
+| [zh-14-doctor-triage.md](./zh-14-doctor-triage.md) | dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约 |
 
 ## English
 
@@ -35,6 +37,8 @@
 | [en-10-marketplace.md](./en-10-marketplace.md) | Publishing to the DSH Marketplace |
 | [en-11-prepare-crash.md](./en-11-prepare-crash.md) | Debugging the undefined.prepare crash family |
 | [en-12-visibility.md](./en-12-visibility.md) | Getting noticed in the dsh ecosystem (retrospective) |
+| [en-13-market.md](./en-13-market.md) | One-click plugin install inside DSH (in-harness market) |
+| [en-14-doctor-triage.md](./en-14-doctor-triage.md) | doctor triage: profile-shadow / manifest-bom / v1 contract |
 
 ## 配套资源
 
@@ -43,6 +47,7 @@
 - 插件模板（GitHub）：[zoahdev/dsh-plugin-template](https://github.com/zoahdev/dsh-plugin-template)
 - 插件医生（GitHub）：[zoahdev/dsh-plugin-doctor](https://github.com/zoahdev/dsh-plugin-doctor)
 - 插件搜索（GitHub）：[zoahdev/dsh-plugin-search](https://github.com/zoahdev/dsh-plugin-search)
+- 插件市场（GitHub）：[zoahdev/dsh-subscribe](https://github.com/zoahdev/dsh-subscribe)
 - 在线站点（GitHub Pages）：[zoahdev.github.io/dsh-tutorials](https://zoahdev.github.io/dsh-tutorials/)
 - 插件源码（本地副本）：[outputs/deepseek-plugin](../deepseek-plugin/README.md)
 - 社区材料包：[outputs/community-kit](../community-kit/README.md)
