@@ -1,0 +1,17 @@
+# dsh-tutorials
+
+> Bilingual (中文 + English) tutorials for DeepSeek Harness: 22 posts covering getting started, architecture, plugin development, pre-publish checks with dsh-plugin-doctor, awesome-list review checklists, prerelease peer/ERESOLVE troubleshooting, plugin search, marketplace publishing, and the undefined.prepare crash family.
+
+## Key facts
+
+- Live site (GitHub Pages): https://zoahdev.github.io/dsh-tutorials/
+- Every command tested on Windows (Node 24 / pnpm 11 / dsh 0.1.0-rc.6)
+- Built from markdown with a static generator; docs/ is the deployable output
+
+## Reading order
+
+- zh-01/en-01: getting started
+- zh-03/en-03: build your first plugin
+- zh-06/en-06: health-check with dsh-plugin-doctor
+- zh-08/en-08: prerelease peers and ERESOLVE
+- zh-11/en-11: debugging the undefined.prepare crash family
