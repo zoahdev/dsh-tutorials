@@ -11,6 +11,7 @@
 | [zh-03-plugin.md](./zh-03-plugin.md) | 手把手写第一个插件（配套 dsh-github-release-radar 源码） |
 | [zh-04-contributing.md](./zh-04-contributing.md) | 贡献者路线图：官方认可的方式与 14 天计划 |
 | [zh-05-intelligence.md](./zh-05-intelligence.md) | 一分钟尽调任何仓库：dsh-github-intelligence 实战（含真实输出） |
+| [zh-06-doctor.md](./zh-06-doctor.md) | 用 dsh-plugin-doctor 给插件做体检（--full 完整链路） |
 
 ## English
 
@@ -21,6 +22,7 @@
 | [en-03-plugin.md](./en-03-plugin.md) | Build your first plugin (full translation) |
 | [en-04-contributing.md](./en-04-contributing.md) | Contributor roadmap (summary) |
 | [en-05-intelligence.md](./en-05-intelligence.md) | One-minute repo due diligence with real output |
+| [en-06-doctor.md](./en-06-doctor.md) | Health-check your dsh plugin (full chain) |
 
 ## 配套资源
 
