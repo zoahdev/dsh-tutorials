@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-pet-evolve：把 agent 成长变成一只宠物 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./zh-12-visibility.html">在 dsh 生态被看见：24 小时复盘</a><a href="./zh-13-market.html">在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战</a><a href="./zh-14-doctor-triage.html">dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约</a><a href="./zh-15-retrieval-efficiency.html">高效代码库检索：把 AGENTS.md 写成工具优先约定（#1864）</a><a href="./zh-16-self-evolution.html">让 agent 自我进化：dsh-rule-evolve 实战</a><a href="./zh-17-growth-report.html">让 agent 的成长看得见：Agent Growth Report 实战</a><a href="./zh-18-lan-deploy.html">内网部署 dsh web：非安全上下文崩溃的根因与修法</a><a href="./zh-19-compaction-cache.html">compaction 缓存击穿：为什么每次自动压缩都多付钱</a><a href="./zh-20-pet-evolve.html">dsh-pet-evolve：把 agent 成长变成一只宠物</a><a href="./zh-21-evolution-badge.html">进化徽章：把规则库变成 README 上的 SVG</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a><a href="./en-12-visibility.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-13-market.html">One-Click Plugin Install Inside DSH: the dsh-subscribe In-Harness Market</a><a href="./en-14-doctor-triage.html">dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract</a><a href="./en-15-retrieval-efficiency.html">Efficient Codebase Retrieval: a Tools-First AGENTS.md Contract (#1864)</a><a href="./en-16-self-evolution.html">Let Agents Evolve: dsh-rule-evolve in Practice</a><a href="./en-17-growth-report.html">Make Agent Growth Visible: the Agent Growth Report</a><a href="./en-18-lan-deploy.html">LAN Deployment: the Insecure-Context Crash, Root Cause, and Fix</a><a href="./en-19-compaction-cache.html">Compaction Cache Misses: Why Every Auto-Compaction Re-bills the Whole Context</a><a href="./en-20-pet-evolve.html">dsh-pet-evolve: Turn Your Agent's Growth into a Pet</a><a href="./en-21-evolution-badge.html">The Evolution Badge: Your Rule Library as a README SVG</a>
+</header>
+<div class="wrap">
+<h1>dsh-pet-evolve：把 agent 成长变成一只宠物</h1>
+<blockquote>
+<p>作者：zoahdev 路 2026-08-15 路 仓库 <a href="https://github.com/zoahdev/dsh-pet-evolve%EF%BC%88v0.2.0%EF%BC%89">https://github.com/zoahdev/dsh-pet-evolve（v0.2.0）</a></p>
+</blockquote>
+<h2>一句话</h2>
+<p>宠物图鉴给你看贴图；dsh-pet-evolve 的每个形态都是 <strong>agent 真实信号挣来的</strong>：已验证规则、完成会话、工具调用、压缩摘要，全部折成 XP。</p>
+<h2>1. 进化</h2>
+<p>蛋 → 幼崽 → 少年 → 成年 → 传说（300 / 800 / 1600 / 3000 XP）。每 100 XP 升 1 级；形态是 Canvas 实时绘制的，四款皮肤：鲸鱼 / 猫 / 机器人 / 幽灵。</p>
+<h2>2. 真实信号</h2>
+<pre><code class="language-sh">npx dsh-pet-evolve --profile ~/.dsh/profiles/web
+</code></pre>
+<ul>
+<li><code>rule_verified</code>：规则库中已验证的规则（兼容 dsh-rule-evolve）</li>
+<li><code>session_completed</code>：完成的会话</li>
+<li><code>tool_call</code>：会话日志里的工具调用</li>
+<li><code>compaction</code>：压缩摘要</li>
+</ul>
+<p>宠物还会镜像 agent 状态：working 时蹦跶+齿轮、done 时彩带、failed 时难过、idle 时眨眼。</p>
+<h2>3. 分享</h2>
+<p>一键导出 1200×630 成长卡 PNG：&quot;My agent pet reached Legend · Level 12 · 25 rules verified&quot;。</p>
+<h2>4. DSH 插件模式</h2>
+<pre><code class="language-sh">dsh plugin --profile web add github:zoahdev/dsh-pet-evolve
+</code></pre>
+<p><code>lib/</code> 已提交，安装免构建（#1965 的教训直接落地）。</p>
+<h2>5. 隐私</h2>
+<p>只读你指定的本地文件，零遥测，分享卡在浏览器本地生成。</p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
