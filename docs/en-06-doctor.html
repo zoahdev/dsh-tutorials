@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health-Check Your dsh Plugin · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a>
+</header>
+<div class="wrap">
+<h1>Health-Check Your dsh Plugin with dsh-plugin-doctor</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · All commands tested on Windows (Node 24, pnpm 11)</p>
+</blockquote>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#why-you-need-a-health-check">Why you need a health check</a></li>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#checks">Checks</a></li>
+<li><a href="#full-check---full">Full check: --full</a></li>
+<li><a href="#ci-integration">CI integration</a></li>
+<li><a href="#faq">FAQ</a></li>
+</ul>
+<h2>Why you need a health check</h2>
+<p>&quot;The plugin loads&quot; is not &quot;the plugin works&quot;. Two real failure classes:</p>
+<ol>
+<li><strong>Broken manifest structure</strong> — a missing <code>dsh.bundle</code>, <code>cordis.patch.yml</code>, or <code>prepare</code> script explodes on someone else&#39;s machine;</li>
+<li><strong>Silently mis-linked peers</strong> — pnpm&#39;s default config can link an old <code>@deepseek-ai/dsh-tools</code> RC into your plugin (verified: <code>0.1.0-rc.3</code> linked against <code>^0.1.0-rc.6</code> with only a generic warning).</li>
+</ol>
+<p><a href="https://github.com/zoahdev/dsh-plugin-doctor">dsh-plugin-doctor</a> turns both into &quot;run it locally and know immediately&quot;.</p>
+<h2>Quick start</h2>
+<pre><code class="language-sh">git clone https://github.com/zoahdev/dsh-plugin-doctor.git
+cd dsh-plugin-doctor
+pnpm install
+pnpm build
+
+node lib/bin.js /path/to/my-plugin
+</code></pre>
+<p>Example output:</p>
+<pre><code class="language-text">[PASS] manifest: my-plugin@1.0.0 bundle manifest ok
+[PASS] patch: 1 plugin row(s): my-hello
+[WARN] entry: entry lib/index.js not built yet (run pnpm install &amp;&amp; pnpm run build)
+[PASS] files: ships: lib, cordis.patch.yml
+✅ ALL CHECKS PASSED
+</code></pre>
+<p>Exit code is <code>0</code> when everything passes, <code>1</code> otherwise.</p>
+<h2>Checks</h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Verifies</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>manifest</code></td>
+<td><code>package.json</code> + <code>dsh.bundle</code> + <code>dsh.bundle.patch</code> + <code>prepare</code> + <code>main</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>patch</code></td>
+<td><code>cordis.patch.yml</code> parses and has an <code>insert</code> row with an <code>id</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>entry</code></td>
+<td>the <code>main</code> target exists</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>files</code></td>
+<td>a <code>files</code> allowlist is declared</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td><code>pnpm run build</code> actually runs</td>
+<td><code>--build</code></td>
+</tr>
+<tr>
+<td><code>pack</code>+<code>install</code></td>
+<td>pack → install into a fresh DSH profile → plugin id in <code>--dump-config</code></td>
+<td><code>--full</code></td>
+</tr>
+</tbody></table>
+<h2>Full check: --full</h2>
+<pre><code class="language-sh">node lib/bin.js --full /path/to/my-plugin
+</code></pre>
+<p>This is the closest local simulation of &quot;installed on someone else&#39;s machine&quot;:</p>
+<pre><code class="language-text">[PASS] manifest: dsh-plugin-template@0.1.0 bundle manifest ok
+[PASS] patch: 1 plugin row(s): template-hello
+[PASS] entry: entry lib/index.js exists
+[PASS] files: ships: lib, cordis.patch.yml, README.md, LICENSE
+[PASS] pack: packed dsh-plugin-template-0.1.0.tgz
+[PASS] install: plugin id(s) present in composed config: template-hello
+✅ ALL CHECKS PASSED
+</code></pre>
+<h2>CI integration</h2>
+<pre><code class="language-sh">node lib/bin.js --json ./my-plugin
+</code></pre>
+<p><code>--json</code> gives a machine-readable report plus the exit code, ready for GitHub Actions:</p>
+<pre><code class="language-yaml">- run: node /path/to/dsh-plugin-doctor/lib/bin.js --build --json ./my-plugin
+</code></pre>
+<h2>FAQ</h2>
+<p><strong>Q: <code>entry</code> warns?</strong> The plugin is not built yet: <code>pnpm install &amp;&amp; pnpm run build</code>.</p>
+<p><strong>Q: <code>manifest</code> fails?</strong> Compare with the <a href="https://github.com/deepseek-ai/deepseek-harness/blob/HEAD/docs/user/develop/basic/publish.md">official publishing guide</a> and add <code>dsh.bundle</code> + <code>prepare</code>.</p>
+<p><strong>Q: <code>install</code> fails?</strong> The plugin id is not in the composed config — check the <code>id</code> in <code>cordis.patch.yml</code>, or upgrade the host to 0.1.0-rc.6+ and retry.</p>
+<h2>Related resources</h2>
+<ul>
+<li>Repo: <a href="https://github.com/zoahdev/dsh-plugin-doctor">zoahdev/dsh-plugin-doctor</a></li>
+<li>Companion template: <a href="https://github.com/zoahdev/dsh-plugin-template">zoahdev/dsh-plugin-template</a> (its CI already includes a real tool-invocation smoke)</li>
+<li>Proposal: <a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1629">RFC #1629</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
