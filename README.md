@@ -14,6 +14,7 @@
 | [zh-06-doctor.md](./zh-06-doctor.md) | 用 dsh-plugin-doctor 给插件做体检（--full 完整链路） |
 | [zh-07-awesome.md](./zh-07-awesome.md) | 让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist |
 | [zh-08-peers.md](./zh-08-peers.md) | dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE |
+| [zh-09-search.md](./zh-09-search.md) | 用 dsh-plugin-search 在 DSH 里找插件（搜→查→体检→装） |
 
 ## English
 
@@ -27,6 +28,7 @@
 | [en-06-doctor.md](./en-06-doctor.md) | Health-check your dsh plugin (full chain) |
 | [en-07-awesome.md](./en-07-awesome.md) | Passing the awesome-dsh-plugin review checklist |
 | [en-08-peers.md](./en-08-peers.md) | Prerelease peers and ERESOLVE troubleshooting |
+| [en-09-search.md](./en-09-search.md) | Finding plugins from inside DSH |
 
 ## 配套资源
 
@@ -34,6 +36,7 @@
 - 旗舰整合（GitHub）：[zoahdev/dsh-github-intelligence](https://github.com/zoahdev/dsh-github-intelligence)
 - 插件模板（GitHub）：[zoahdev/dsh-plugin-template](https://github.com/zoahdev/dsh-plugin-template)
 - 插件医生（GitHub）：[zoahdev/dsh-plugin-doctor](https://github.com/zoahdev/dsh-plugin-doctor)
+- 插件搜索（GitHub）：[zoahdev/dsh-plugin-search](https://github.com/zoahdev/dsh-plugin-search)
 - 在线站点（GitHub Pages）：[zoahdev.github.io/dsh-tutorials](https://zoahdev.github.io/dsh-tutorials/)
 - 插件源码（本地副本）：[outputs/deepseek-plugin](../deepseek-plugin/README.md)
 - 社区材料包：[outputs/community-kit](../community-kit/README.md)
