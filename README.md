@@ -12,6 +12,8 @@
 | [zh-04-contributing.md](./zh-04-contributing.md) | 贡献者路线图：官方认可的方式与 14 天计划 |
 | [zh-05-intelligence.md](./zh-05-intelligence.md) | 一分钟尽调任何仓库：dsh-github-intelligence 实战（含真实输出） |
 | [zh-06-doctor.md](./zh-06-doctor.md) | 用 dsh-plugin-doctor 给插件做体检（--full 完整链路） |
+| [zh-07-awesome.md](./zh-07-awesome.md) | 让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist |
+| [zh-08-peers.md](./zh-08-peers.md) | dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE |
 
 ## English
 
@@ -23,11 +25,15 @@
 | [en-04-contributing.md](./en-04-contributing.md) | Contributor roadmap (summary) |
 | [en-05-intelligence.md](./en-05-intelligence.md) | One-minute repo due diligence with real output |
 | [en-06-doctor.md](./en-06-doctor.md) | Health-check your dsh plugin (full chain) |
+| [en-07-awesome.md](./en-07-awesome.md) | Passing the awesome-dsh-plugin review checklist |
+| [en-08-peers.md](./en-08-peers.md) | Prerelease peers and ERESOLVE troubleshooting |
 
 ## 配套资源
 
 - 插件源码（GitHub）：[zoahdev/dsh-github-release-radar](https://github.com/zoahdev/dsh-github-release-radar)
+- 旗舰整合（GitHub）：[zoahdev/dsh-github-intelligence](https://github.com/zoahdev/dsh-github-intelligence)
 - 插件模板（GitHub）：[zoahdev/dsh-plugin-template](https://github.com/zoahdev/dsh-plugin-template)
+- 插件医生（GitHub）：[zoahdev/dsh-plugin-doctor](https://github.com/zoahdev/dsh-plugin-doctor)
 - 在线站点（GitHub Pages）：[zoahdev.github.io/dsh-tutorials](https://zoahdev.github.io/dsh-tutorials/)
 - 插件源码（本地副本）：[outputs/deepseek-plugin](../deepseek-plugin/README.md)
 - 社区材料包：[outputs/community-kit](../community-kit/README.md)
