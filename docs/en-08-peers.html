@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prerelease Peers and ERESOLVE · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a>
+</header>
+<div class="wrap">
+<h1>dsh Plugin Dependency Traps: Prerelease Peers and ERESOLVE</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · Behavior verified against dsh 0.1.0-rc.6 (npm and pnpm)</p>
+</blockquote>
+<h2>The semver fact nobody says out loud</h2>
+<p><code>^0.1.0-rc.6</code> means:</p>
+<pre><code class="language-text">&gt;=0.1.0-rc.6 and &lt;0.2.0
+</code></pre>
+<p>It <strong>matches</strong>: <code>0.1.0-rc.6</code>, <code>0.1.0-rc.7</code>, <code>0.1.0</code>, <code>0.1.1</code>…
+It <strong>does not match</strong>: <code>0.1.0-rc.3</code>, <code>0.0.9</code>, <code>0.2.0</code>.</p>
+<p>So <code>^0.1.0-rc.6</code> is a floor, not a pin. <strong>If your host has <code>0.1.0-rc.3</code> and the plugin requires rc.6, they conflict.</strong></p>
+<h2>npm vs pnpm behavior</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>npm</th>
+<th>pnpm (default)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Host already has old RC <code>0.1.0-rc.3</code></td>
+<td><code>ERESOLVE</code> peer conflict, hard fail</td>
+<td>Often a generic warning, installs anyway</td>
+</tr>
+<tr>
+<td>Host has no dsh-tools</td>
+<td>Tries to install the peer</td>
+<td>With <code>autoInstallPeers=false</code>, does not install — breaks at runtime</td>
+</tr>
+<tr>
+<td>Host is rc.6</td>
+<td>Fine</td>
+<td>Fine</td>
+</tr>
+</tbody></table>
+<p>pnpm&#39;s silent path is the worst: the plugin&#39;s <code>apply()</code> links to the old copy, and the crash happens at the first tool call, not at install time.</p>
+<h2>Three layers of defense (what the template does)</h2>
+<ol>
+<li><strong>Peer declaration</strong>: only the tested range <code>^0.1.0-rc.6</code>, no pretend-wide ranges;</li>
+<li><strong>Runtime guard</strong>: <code>apply()</code> resolves the actually-linked <code>@deepseek-ai/dsh-tools</code> version and throws an actionable error on mismatch (see <a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template/src/version.ts</a>);</li>
+<li><strong>Install verification</strong>: CI installs the tarball into a fresh host and really invokes the tool (the template&#39;s integration test).</li>
+</ol>
+<h2>User side: ERESOLVE / peer conflict</h2>
+<pre><code class="language-sh"># 1. Find the actual version in your host
+pnpm why @deepseek-ai/dsh-tools
+# or
+npm ls @deepseek-ai/dsh-tools
+
+# 2. Upgrade the host to the version the plugin was verified against (0.1.0-rc.6), then install
+dsh upgrade
+dsh plugin --profile web add &lt;your-plugin&gt;
+
+# 3. Confirm what is actually composed
+dsh --profile web --dump-config
+</code></pre>
+<p>Do <strong>not</strong> reach for <code>--legacy-peer-deps</code>: it hides the conflict and the plugin will likely explode at runtime anyway.</p>
+<h2>Plugin author side: before publishing</h2>
+<pre><code class="language-sh">node /path/to/dsh-plugin-doctor/lib/bin.js --full .
+</code></pre>
+<p>The <code>install</code> check really runs <code>dsh plugin add</code> + <code>--dump-config</code>; combine that with a real tool invocation in a fresh host and you have actually verified peer compatibility.</p>
+<h2>Resources</h2>
+<ul>
+<li>Template (with guard source): <a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template</a></li>
+<li>Health checks: <a href="https://github.com/zoahdev/dsh-plugin-doctor">dsh-plugin-doctor</a></li>
+<li>Official publishing guide: <a href="https://github.com/deepseek-ai/deepseek-harness/blob/HEAD/docs/user/develop/basic/publish.md">publish.md</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
