@@ -73,6 +73,22 @@ node lib/bin.js --full /path/to/my-plugin
 ✅ ALL CHECKS PASSED
 ```
 
+## 插件外壳（v1.1.0）：让 agent 直接体检
+
+从 v1.1.0 起，dsh-plugin-doctor 自带插件外壳（`dsh.bundle` + `cordis.patch.yml`），可以直接装进 DSH：
+
+```sh
+dsh plugin --profile web add dsh-plugin-doctor
+# 或本地 tarball：
+dsh plugin --profile web add ./dsh-plugin-doctor-1.1.0.tgz
+```
+
+装完在 DSH 里对 agent 说：
+
+> 检查一下这个插件能不能发布 —— 先跑 build，再做完整验证。
+
+agent 会调用 `plugin_check` 工具（`dir` + 可选 `build`/`full`），逐项返回 PASS/WARN/FAIL 和整体 `ok`，不用切出 DSH。
+
 ## 接入 CI
 
 ```sh
