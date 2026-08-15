@@ -20,6 +20,7 @@
 | [zh-12-visibility.md](./zh-12-visibility.md) | 在 dsh 生态被看见：24 小时复盘（可复制 checklist） |
 | [zh-13-market.md](./zh-13-market.md) | 在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战（v0.3） |
 | [zh-14-doctor-triage.md](./zh-14-doctor-triage.md) | dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约 |
+| [zh-15-retrieval-efficiency.md](./zh-15-retrieval-efficiency.md) | 高效代码库检索：AGENTS.md 工具优先约定（#1864 效率反馈） |
 
 ## English
 
@@ -39,6 +40,7 @@
 | [en-12-visibility.md](./en-12-visibility.md) | Getting noticed in the dsh ecosystem (retrospective) |
 | [en-13-market.md](./en-13-market.md) | One-click plugin install inside DSH (in-harness market) |
 | [en-14-doctor-triage.md](./en-14-doctor-triage.md) | doctor triage: profile-shadow / manifest-bom / v1 contract |
+| [en-15-retrieval-efficiency.md](./en-15-retrieval-efficiency.md) | Efficient retrieval: a tools-first AGENTS.md contract |
 
 ## 配套资源
 
