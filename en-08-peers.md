@@ -25,6 +25,24 @@ So `^0.1.0-rc.6` is a floor, not a pin. **If your host has `0.1.0-rc.3` and the 
 
 pnpm's silent path is the worst: the plugin's `apply()` links to the old copy, and the crash happens at the first tool call, not at install time.
 
+## Verified 2026-08-15: npm's `latest` tag is itself a trap
+
+Actual dist-tags for `@deepseek-ai/dsh-tools` on npm:
+
+```text
+latest: 0.0.1-rc.1
+next:   0.1.0-rc.6
+```
+
+A bare `npm install @deepseek-ai/dsh-tools` (or a peer auto-install) gets `0.0.1-rc.1`, not the `0.1.0-rc.6` the ecosystem builds against — and `0.0.x` does not satisfy the `^0.1.0-rc.6` peer range at all. This is a real source of ERESOLVE / peer conflicts.
+
+Install explicitly:
+
+```sh
+pnpm add @deepseek-ai/dsh-tools@next   # 0.1.0-rc.6
+# or install dsh@0.1.0-rc.6 through the official channel
+```
+
 ## Three layers of defense (what the template does)
 
 1. **Peer declaration**: only the tested range `^0.1.0-rc.6`, no pretend-wide ranges;
