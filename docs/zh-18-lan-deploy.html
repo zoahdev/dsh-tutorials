@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>内网部署 dsh web：非安全上下文崩溃的根因与修法 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./zh-12-visibility.html">在 dsh 生态被看见：24 小时复盘</a><a href="./zh-13-market.html">在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战</a><a href="./zh-14-doctor-triage.html">dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约</a><a href="./zh-15-retrieval-efficiency.html">高效代码库检索：把 AGENTS.md 写成工具优先约定（#1864）</a><a href="./zh-16-self-evolution.html">让 agent 自我进化：dsh-rule-evolve 实战</a><a href="./zh-17-growth-report.html">让 agent 的成长看得见：Agent Growth Report 实战</a><a href="./zh-18-lan-deploy.html">内网部署 dsh web：非安全上下文崩溃的根因与修法</a><a href="./zh-19-compaction-cache.html">compaction 缓存击穿：为什么每次自动压缩都多付钱</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a><a href="./en-12-visibility.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-13-market.html">One-Click Plugin Install Inside DSH: the dsh-subscribe In-Harness Market</a><a href="./en-14-doctor-triage.html">dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract</a><a href="./en-15-retrieval-efficiency.html">Efficient Codebase Retrieval: a Tools-First AGENTS.md Contract (#1864)</a><a href="./en-16-self-evolution.html">Let Agents Evolve: dsh-rule-evolve in Practice</a><a href="./en-17-growth-report.html">Make Agent Growth Visible: the Agent Growth Report</a><a href="./en-18-lan-deploy.html">LAN Deployment: the Insecure-Context Crash, Root Cause, and Fix</a><a href="./en-19-compaction-cache.html">Compaction Cache Misses: Why Every Auto-Compaction Re-bills the Whole Context</a>
+</header>
+<div class="wrap">
+<h1>内网部署 dsh web：非安全上下文崩溃的根因与修法</h1>
+<blockquote>
+<p>作者：zoahdev 路 2026-08-15 路 对应上游补丁 <a href="https://github.com/zoahdev/deepseek-harness/tree/fix/web-crypto-randomuuid-insecure-context">https://github.com/zoahdev/deepseek-harness/tree/fix/web-crypto-randomuuid-insecure-context</a></p>
+</blockquote>
+<h2>一句话</h2>
+<p>局域网用明文 HTTP 打开 dsh web，设置页报 <code>crypto.randomUUID is not a function</code>——因为该 API 只在安全上下文（HTTPS / localhost）里存在。修法不是换浏览器，而是给浏览器侧 UUID 生成加兜底。</p>
+<h2>1. 现象</h2>
+<pre><code class="language-yaml"># profile patch 让 web 绑定 0.0.0.0
+- id: webserver
+  config:
+    host: 0.0.0.0
+    port: !!js ctx.webStartup.port ?? 3080
+</code></pre>
+<p>另一台设备打开 <code>http://&lt;内网IP&gt;:3080</code> → 设置 → 模型 → <code>加载提供方目录失败: crypto.randomUUID is not a function</code>。</p>
+<h2>2. 根因</h2>
+<p>浏览器全局 <code>crypto.randomUUID()</code> 只在安全上下文暴露。局域网 IP + 明文 HTTP 是非安全上下文，该值为 <code>undefined</code>；前端 4 处 id 生成（RPC id、附件 id、消息 id、实例 token）直接调用它，TypeError 在请求发出前就抛了。</p>
+<h2>3. 修复（上游补丁）</h2>
+<p><code>fix/web-crypto-randomuuid-insecure-context</code>：</p>
+<ul>
+<li>新增零依赖 <code>@deepseek-ai/dsh-random-uuid</code>：优先 <code>crypto.randomUUID()</code>，缺失时回退到 <code>crypto.getRandomValues()</code> 生成 RFC 4122 v4；</li>
+<li>全部浏览器侧调用点改走它；打包产物里不再有直接 <code>crypto.randomUUID()</code> mint。</li>
+</ul>
+<p>验证：<code>build:lib:host</code> + <code>build:lib:client</code> 全绿，定向 vitest 782/782。</p>
+<h2>4. 部署建议</h2>
+<ul>
+<li>受信内网 + 明文 HTTP：可用（补丁后不崩溃），但传输仍无加密；</li>
+<li>公网/半受信网络：请在前面放 HTTPS（反向代理或自签证书），并限制网络可达；</li>
+<li>需要远程访问时，用 Tailscale/WireGuard 这类加密通道，比裸开端口安全得多。</li>
+</ul>
+<h2>5. 相关</h2>
+<ul>
+<li>官方讨论：<a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1919">https://github.com/deepseek-ai/deepseek-harness/discussions/1919</a></li>
+<li>社区插件兜底：dsh-web-lan-access、dsh-mobile-gate（已在 dsh-subscribe 注册表收录）</li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
