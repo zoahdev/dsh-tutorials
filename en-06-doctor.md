@@ -72,6 +72,22 @@ This is the closest local simulation of "installed on someone else's machine":
 ✅ ALL CHECKS PASSED
 ```
 
+## Plugin shell (v1.1.0): let the agent run the check
+
+Since v1.1.0, dsh-plugin-doctor also ships a plugin shell (`dsh.bundle` + `cordis.patch.yml`), so it can be installed straight into DSH:
+
+```sh
+dsh plugin --profile web add dsh-plugin-doctor
+# or from a local tarball:
+dsh plugin --profile web add ./dsh-plugin-doctor-1.1.0.tgz
+```
+
+Then tell the agent inside DSH:
+
+> Check whether this plugin is ready to publish — run the build first, then do a full verification.
+
+The agent calls the `plugin_check` tool (`dir` plus optional `build`/`full`), returning PASS/WARN/FAIL per check and an overall `ok` — no need to leave DSH.
+
 ## CI integration
 
 ```sh
