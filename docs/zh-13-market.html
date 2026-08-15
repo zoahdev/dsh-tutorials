@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./zh-12-visibility.html">在 dsh 生态被看见：24 小时复盘</a><a href="./zh-13-market.html">在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战</a><a href="./zh-14-doctor-triage.html">dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a><a href="./en-12-visibility.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-13-market.html">One-Click Plugin Install Inside DSH: the dsh-subscribe In-Harness Market</a><a href="./en-14-doctor-triage.html">dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract</a>
+</header>
+<div class="wrap">
+<h1>在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 对应仓库 <a href="https://github.com/zoahdev/dsh-subscribe%EF%BC%88v0.3.0%EF%BC%89">https://github.com/zoahdev/dsh-subscribe（v0.3.0）</a></p>
+</blockquote>
+<h2>一句话</h2>
+<p>把插件市场装进 DeepSeek Harness：在浏览器里打开 <code>/dsh-subscribe/</code>，浏览 536 个插件，点一下按钮就能安装、卸载、更新、批准构建脚本——每个按钮都真实驱动本机 dsh CLI。</p>
+<h2>1. 安装市场插件</h2>
+<pre><code class="language-sh">dsh plugin --profile web add github:zoahdev/dsh-subscribe#path:/plugin
+</code></pre>
+<p>重启 <code>dsh web</code>，然后打开：</p>
+<pre><code class="language-text">http://localhost:&lt;你的 dsh 端口&gt;/dsh-subscribe/
+</code></pre>
+<h2>2. 页面能干什么</h2>
+<ul>
+<li><strong>浏览/搜索</strong>：536 插件，中英双语描述，按星标或&quot;已验证&quot;排序；</li>
+<li><strong>一键安装</strong>：点 Install，页面显示实时进度，装完自动刷新已安装列表；</li>
+<li><strong>一键卸载 / 更新</strong>：已安装卡片上直接操作；</li>
+<li><strong>批准构建脚本</strong>：git 插件被 pnpm <code>allowBuilds</code> 拦截时，页面会提示一键批准（只允许已安装的包）；</li>
+<li><strong>Steam 式订阅</strong>：把插件加进订阅清单 → 导出 <code>subscriptions.json</code> → 终端跑同步命令，一次装齐；</li>
+<li><strong>日志导出</strong>：<code>/dsh-subscribe/logs</code> 下载脱敏文本日志，报 bug 时直接贴。</li>
+</ul>
+<h2>3. 底层是什么</h2>
+<p>插件在宿主 webServer 上挂了一组同源 HTTP API：</p>
+<table>
+<thead>
+<tr>
+<th>路由</th>
+<th>方法</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/dsh-subscribe/registry</code></td>
+<td>GET</td>
+<td>注册表 + 统计</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/installed</code></td>
+<td>GET</td>
+<td>已安装列表</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/status</code></td>
+<td>GET</td>
+<td>实时安装进度</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/updates</code></td>
+<td>GET</td>
+<td>更新检测（npm latest / git HEAD）</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/install</code></td>
+<td>POST</td>
+<td>一键安装（curated 或 file:/link:）</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/uninstall</code></td>
+<td>POST</td>
+<td>一键卸载</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/update</code></td>
+<td>POST</td>
+<td>一键更新</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/approve-builds</code></td>
+<td>POST</td>
+<td>批准构建脚本</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/cancel</code></td>
+<td>POST</td>
+<td>取消进行中的操作</td>
+</tr>
+<tr>
+<td><code>/dsh-subscribe/logs</code></td>
+<td>GET</td>
+<td>脱敏日志导出</td>
+</tr>
+</tbody></table>
+<p>安全模型：写操作必须同源 POST；安装 spec 只能来自 curated 注册表或显式 <code>file:</code>/<code>link:</code>；spawn 目标走白名单正则。</p>
+<h2>4. 验证证据（不是&quot;能加载&quot;）</h2>
+<p>CI 与本地实测完整链路：</p>
+<pre><code class="language-text">全新 DSH profile → 安装 tarball → --dump-config 含 dsh-subscribe
+→ dsh web 启动 HTTP 200
+→ GET /dsh-subscribe/registry → 536 plugins, 20 verified
+→ POST /dsh-subscribe/install（真实执行 dsh CLI）→ exit 0
+→ GET /dsh-subscribe/installed → 包含 dsh-subscribe
+</code></pre>
+<h2>5. 命令行版（不想开网页时）</h2>
+<pre><code class="language-sh">node scripts/dsh-subscribe.mjs list                 # 列出插件
+node scripts/dsh-subscribe.mjs install &lt;id&gt;         # 直接装一个
+node scripts/dsh-subscribe.mjs sync --dry-run       # 预览订阅同步
+node scripts/dsh-subscribe.mjs sync --profile web   # 装齐全部订阅
+</code></pre>
+<h2>相关</h2>
+<ul>
+<li>网页商店（不装插件也能用）：<a href="https://zoahdev.github.io/dsh-subscribe/">https://zoahdev.github.io/dsh-subscribe/</a></li>
+<li>对话内 agent 工具：<code>market_search</code> / <code>market_stats</code> / <code>market_install_command</code></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
