@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>调试 dsh 插件崩溃：undefined.prepare 全家桶 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a>
+</header>
+<div class="wrap">
+<h1>调试 dsh 插件崩溃：<code>undefined.prepare</code> 全家桶</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 基于 #1697 / #1763 的真实根因排查与修复</p>
+</blockquote>
+<h2>症状</h2>
+<pre><code class="language-text">Cannot read properties of undefined (reading &#39;prepare&#39;)
+</code></pre>
+<p>出现方式很迷惑：有时装完第三方插件后<strong>所有</strong>工具调用都崩；有时只是 <code>web_search</code> / <code>fetch</code> 等特定工具间歇性崩；重试偶尔能过。DSH 版本 0.1.0-rc.6，Windows/Linux 都可能。</p>
+<h2>根因（一句话版）</h2>
+<p><code>@deepseek-ai/dsh-tools</code> 用 <code>Symbol(&#39;@deepseek-ai/dsh-tools.scheduler&#39;)</code> 作为内部调度器的 key，而 <strong>unique symbol 的身份是 per-module-instance 的</strong>。当 profile 里出现第二份物理副本（pnpm hoisted 把插件的传递依赖提升到顶层）时，宿主和副本各持一个不同的 symbol——<code>dsh-agent-loop</code> 用宿主的 key 去读，读到的却是副本存的值 → <code>undefined.prepare</code>。</p>
+<p>间歇性是因为只有&quot;命中另一实例调度槽&quot;的那次调用才崩。</p>
+<h2>诊断三步</h2>
+<pre><code class="language-sh"># 1. 一键检查 profile 是否有宿主遮蔽（真实目录形式的 @deepseek-ai/* 副本）
+node /path/to/dsh-plugin-doctor/lib/bin.js --profile ~/.dsh/profiles/web
+# 输出 FAIL + 具体包名即命中
+
+# 2. 手动确认
+dir ~/.dsh/profiles/web/node_modules/@deepseek-ai
+# 顶层出现 dsh-tools 之类的&quot;真实目录&quot;（不是链接）就是遮蔽
+
+# 3. 确认实际解析版本
+pnpm why @deepseek-ai/dsh-tools
+</code></pre>
+<h2>立即修复：link: 依赖</h2>
+<p>在 profile 的 <code>package.json</code> 里把宿主副本以 <code>link:</code> 方式钉住，让 profile 与宿主共用同一份 dsh-tools（同一 realpath = 同一模块实例 = symbol 一致）：</p>
+<pre><code class="language-jsonc">{
+  &quot;dependencies&quot;: {
+    &quot;@deepseek-ai/dsh-tools&quot;: &quot;link:C:/Users/&lt;user&gt;/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-tools&quot;
+  }
+}
+</code></pre>
+<p>然后在 profile 目录 <code>pnpm install</code>，再试工具调用。路径按你机器上的 npm 全局前缀调整。</p>
+<h2>上游修复（已备好，等 PR 通道开放）</h2>
+<p><a href="https://github.com/zoahdev/deepseek-harness/tree/fix/tool-runtime-scheduler-symbol-for">https://github.com/zoahdev/deepseek-harness/tree/fix/tool-runtime-scheduler-symbol-for</a></p>
+<p>两层：</p>
+<ol>
+<li><code>Symbol.for(&#39;@deepseek-ai/dsh-tools.scheduler&#39;)</code>——同一进程所有副本共享 key；</li>
+<li><code>TOOL_RUNTIME_SCHEDULER_PROTOCOL_VERSION</code> + <code>assertSchedulerProtocol()</code>——跨版本副本仍然响亮报错，不会静默跑错协议。</li>
+</ol>
+<p>已用 npm 上真实的 rc.6 包验证：修复前两个物理副本 symbol 不相等，修复后相等。</p>
+<h2>别混淆：allowBuilds 拦截是另一件事</h2>
+<p>git 安装插件时如果报 <code>ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED</code>，那是 pnpm 11 禁止 git 依赖执行 <code>prepare</code>——不是上面的运行时崩溃。解法：把 dsh CLI 打印的 key 加进 profile 的 <code>pnpm-workspace.yaml</code> 的 <code>allowBuilds</code>，再跑一次安装。</p>
+<h2>预防</h2>
+<ul>
+<li>发布前：<code>dsh-plugin-doctor --full .</code>（真实装进全新 profile 验证）；</li>
+<li>模板自带运行时守卫：dsh-tools 版本不匹配时 <code>apply()</code> 直接抛带指引的错误（<a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template</a>）；</li>
+<li>遇到崩溃先跑 <code>--profile</code>，别急着重装。</li>
+</ul>
+<h2>相关讨论</h2>
+<ul>
+<li>#1697（根因 + 修复）：<a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1697">https://github.com/deepseek-ai/deepseek-harness/discussions/1697</a></li>
+<li>#1763（同一崩溃新报）：<a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1763">https://github.com/deepseek-ai/deepseek-harness/discussions/1763</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
