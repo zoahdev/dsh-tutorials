@@ -49,6 +49,10 @@
 | [en-18-lan-deploy.md](./en-18-lan-deploy.md) | LAN deployment: insecure-context crash root cause + fix |
 | [zh-19-compaction-cache.md](./zh-19-compaction-cache.md) | compaction 缓存击穿：为什么每次自动压缩都多付钱 |
 | [en-19-compaction-cache.md](./en-19-compaction-cache.md) | Compaction cache misses: why auto-compaction re-bills |
+| [zh-20-pet-evolve.md](./zh-20-pet-evolve.md) | dsh-pet-evolve：把 agent 成长变成一只宠物 |
+| [en-20-pet-evolve.md](./en-20-pet-evolve.md) | dsh-pet-evolve: turn agent growth into a pet |
+| [zh-21-evolution-badge.md](./zh-21-evolution-badge.md) | 进化徽章：把规则库变成 README 上的 SVG |
+| [en-21-evolution-badge.md](./en-21-evolution-badge.md) | The evolution badge: rule library as a README SVG |
 
 ## 配套资源
 
