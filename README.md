@@ -22,6 +22,7 @@
 | [zh-14-doctor-triage.md](./zh-14-doctor-triage.md) | dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约 |
 | [zh-15-retrieval-efficiency.md](./zh-15-retrieval-efficiency.md) | 高效代码库检索：AGENTS.md 工具优先约定（#1864 效率反馈） |
 | [zh-16-self-evolution.md](./zh-16-self-evolution.md) | 让 agent 自我进化：dsh-rule-evolve 实战（验证驱动闭环） |
+| [zh-17-growth-report.md](./zh-17-growth-report.md) | 让 agent 的成长看得见：Agent Growth Report 实战 |
 
 ## English
 
@@ -43,6 +44,7 @@
 | [en-14-doctor-triage.md](./en-14-doctor-triage.md) | doctor triage: profile-shadow / manifest-bom / v1 contract |
 | [en-15-retrieval-efficiency.md](./en-15-retrieval-efficiency.md) | Efficient retrieval: a tools-first AGENTS.md contract |
 | [en-16-self-evolution.md](./en-16-self-evolution.md) | Let agents evolve: dsh-rule-evolve in practice |
+| [en-17-growth-report.md](./en-17-growth-report.md) | Make agent growth visible: the growth report |
 
 ## 配套资源
 
