@@ -53,6 +53,8 @@
 | [en-20-pet-evolve.md](./en-20-pet-evolve.md) | dsh-pet-evolve: turn agent growth into a pet |
 | [zh-21-evolution-badge.md](./zh-21-evolution-badge.md) | 进化徽章：把规则库变成 README 上的 SVG |
 | [en-21-evolution-badge.md](./en-21-evolution-badge.md) | The evolution badge: rule library as a README SVG |
+| [zh-22-session-shelf.md](./zh-22-session-shelf.md) | dsh-shelf：给你的 dsh 会话一个书架 |
+| [en-22-session-shelf.md](./en-22-session-shelf.md) | dsh-shelf: give your dsh sessions a shelf |
 
 ## 配套资源
 
