@@ -67,6 +67,16 @@ It <strong>does not match</strong>: <code>0.1.0-rc.3</code>, <code>0.0.9</code>,
 </tr>
 </tbody></table>
 <p>pnpm&#39;s silent path is the worst: the plugin&#39;s <code>apply()</code> links to the old copy, and the crash happens at the first tool call, not at install time.</p>
+<h2>Verified 2026-08-15: npm&#39;s <code>latest</code> tag is itself a trap</h2>
+<p>Actual dist-tags for <code>@deepseek-ai/dsh-tools</code> on npm:</p>
+<pre><code class="language-text">latest: 0.0.1-rc.1
+next:   0.1.0-rc.6
+</code></pre>
+<p>A bare <code>npm install @deepseek-ai/dsh-tools</code> (or a peer auto-install) gets <code>0.0.1-rc.1</code>, not the <code>0.1.0-rc.6</code> the ecosystem builds against — and <code>0.0.x</code> does not satisfy the <code>^0.1.0-rc.6</code> peer range at all. This is a real source of ERESOLVE / peer conflicts.</p>
+<p>Install explicitly:</p>
+<pre><code class="language-sh">pnpm add @deepseek-ai/dsh-tools@next   # 0.1.0-rc.6
+# or install dsh@0.1.0-rc.6 through the official channel
+</code></pre>
 <h2>Three layers of defense (what the template does)</h2>
 <ol>
 <li><strong>Peer declaration</strong>: only the tested range <code>^0.1.0-rc.6</code>, no pretend-wide ranges;</li>
