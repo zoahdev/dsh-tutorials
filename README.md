@@ -17,6 +17,7 @@
 | [zh-09-search.md](./zh-09-search.md) | 用 dsh-plugin-search 在 DSH 里找插件（搜→查→体检→装） |
 | [zh-10-marketplace.md](./zh-10-marketplace.md) | 在 DSH Marketplace 发布插件（含 allowBuilds 实测坑） |
 | [zh-11-prepare-crash.md](./zh-11-prepare-crash.md) | 调试 `undefined.prepare` 崩溃全家桶（#1697/#1763 根因与修复） |
+| [zh-12-visibility.md](./zh-12-visibility.md) | 在 dsh 生态被看见：24 小时复盘（可复制 checklist） |
 
 ## English
 
@@ -33,6 +34,7 @@
 | [en-09-search.md](./en-09-search.md) | Finding plugins from inside DSH |
 | [en-10-marketplace.md](./en-10-marketplace.md) | Publishing to the DSH Marketplace |
 | [en-11-prepare-crash.md](./en-11-prepare-crash.md) | Debugging the undefined.prepare crash family |
+| [en-12-visibility.md](./en-12-visibility.md) | Getting noticed in the dsh ecosystem (retrospective) |
 
 ## 配套资源
 
