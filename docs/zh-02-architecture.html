@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>理解 dsh 架构：一切皆插件与 Cordis · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>理解 dsh 架构：一切皆插件与 Cordis</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 基于官方仓库源码与文档</p>
+</blockquote>
+<h2>目录</h2>
+<ul>
+<li><a href="#%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%9E%B6%E6%9E%84">一句话架构</a></li>
+<li><a href="#%E6%8F%92%E4%BB%B6%E6%98%AF%E4%BB%80%E4%B9%88">插件是什么</a></li>
+<li><a href="#context-%E4%B8%8E-apply">Context 与 apply</a></li>
+<li><a href="#%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5inject">依赖注入：inject</a></li>
+<li><a href="#%E6%95%88%E6%9E%9C%E5%8D%B3%E6%B3%A8%E5%86%8Cctxeffect">效果即注册：ctx.effect</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7-dsldefinetool">工具 DSL：defineTool</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AEschemastery">配置：Schemastery</a></li>
+<li><a href="#%E7%BB%84%E5%90%88%E6%9C%BA%E5%88%B6bundleprofilepatch">组合机制：bundle、profile、patch</a></li>
+<li><a href="#%E5%AE%98%E6%96%B9%E4%BB%93%E5%BA%93%E5%B8%83%E5%B1%80">官方仓库布局</a></li>
+<li><a href="#%E4%B8%8E-mcp-%E7%9A%84%E5%85%B3%E7%B3%BB">与 MCP 的关系</a></li>
+<li><a href="#%E5%85%B3%E9%94%AE%E6%9C%AF%E8%AF%AD%E8%A1%A8">关键术语表</a></li>
+</ul>
+<h2>一句话架构</h2>
+<blockquote>
+<p>dsh = Cordis（插件运行时）+ 能力包（tools/llm/fs/shell/web/…）+ 会话层（事件溯源）+ 组合机制（profile/patch）</p>
+</blockquote>
+<p>每个能力都是一组插件；插件通过注册表和事件互相协作；agent 循环（<code>agent-loop</code>）把模型、工具、会话串起来。官方把这种设计称为「一切皆插件」：<strong>官方包并不比社区包更重要</strong>。</p>
+<h2>插件是什么</h2>
+<p>在 dsh 里，插件就是一个导出 <code>name</code> 和 <code>apply(ctx)</code> 的 TypeScript/JavaScript 模块：</p>
+<pre><code class="language-ts">import type { Context } from &#39;@deepseek-ai/cordis&#39;
+
+export const name = &#39;my-plugin&#39;
+
+export function apply(ctx: Context) {
+  // 在这里注册能力
+}
+</code></pre>
+<p>三种形式：</p>
+<table>
+<thead>
+<tr>
+<th>形式</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>函数式（<code>export function apply</code>）</td>
+<td>大多数情况，最简单</td>
+</tr>
+<tr>
+<td>对象式（<code>export default { name, apply }</code>）</td>
+<td>需要组织多个字段</td>
+</tr>
+<tr>
+<td>类式（<code>extends Service</code>）</td>
+<td>需要向其他插件提供<strong>服务</strong>（service）</td>
+</tr>
+</tbody></table>
+<h2>Context 与 apply</h2>
+<p><code>apply(ctx, config)</code> 在插件加载时被调用一次，<code>ctx</code> 是上下文对象：</p>
+<ul>
+<li><code>ctx.on(...)</code> / <code>ctx.effect(...)</code>：注册事件监听和副作用；</li>
+<li><code>ctx.inject([...], (nestedCtx) =&gt; {})</code>：声明式地等待服务就绪；</li>
+<li><code>ctx.tools</code>、<code>ctx.web</code>、<code>ctx.llm</code> 等：其他插件提供的服务（依赖注入后可用）。</li>
+</ul>
+<h2>依赖注入：inject</h2>
+<p>插件需要别的服务时，用 <code>inject</code> 声明；Cordis 保证依赖就绪后才调用 <code>apply</code>：</p>
+<pre><code class="language-ts">export const name = &#39;my-tool-plugin&#39;
+export const inject = [&#39;tools&#39;]
+
+export function apply(ctx: Context) {
+  ctx.tools.register(/* ... */)
+}
+</code></pre>
+<p>官方约定：<strong>注册都是 effect</strong>——<code>ctx.tools.register(...)</code> 返回 disposer，插件卸载时自动清理，不需要手动 removeListener。</p>
+<h2>效果即注册：ctx.effect</h2>
+<p>有需要手动清理的资源（定时器、网络连接）时：</p>
+<pre><code class="language-ts">export function apply(ctx: Context) {
+  ctx.effect(() =&gt; {
+    const timer = setInterval(() =&gt; console.log(&#39;heartbeat&#39;), 5000)
+    return () =&gt; clearInterval(timer)
+  })
+}
+</code></pre>
+<p>配置热更新时，旧实例的注册全部自动卸载，新配置重新加载。</p>
+<h2>工具 DSL：defineTool</h2>
+<p>给模型用的工具用 <code>@deepseek-ai/dsh-tools</code> 的 <code>defineTool</code> 定义：</p>
+<pre><code class="language-ts">import { defineTool } from &#39;@deepseek-ai/dsh-tools&#39;
+
+ctx.tools.register(defineTool({
+  name: &#39;greet&#39;,
+  description: &#39;Greet someone by name.&#39;,
+  parameters: {
+    name: { type: &#39;string&#39;, required: true, description: &#39;The name to greet&#39; },
+  },
+  output: {
+    schema: { type: &#39;string&#39; },
+    render: (_args, value) =&gt; [{ type: &#39;text&#39;, text: value }],
+  },
+  async execute(args, exec) {
+    return `Hello, ${args.name}!`
+  },
+}))
+</code></pre>
+<p>要点：</p>
+<ul>
+<li><code>parameters</code>/<code>output.schema</code> 是作者面 schema，自动编译成模型看到的 JSON Schema，并<strong>在 execute 前校验参数</strong>；</li>
+<li><code>output.render</code> 是纯函数，把规范值（canonical value）转成模型可读文本；</li>
+<li><code>presentCall</code>/<code>presentResult</code> 决定 UI 卡片（generic/terminal/diff/search/web）；</li>
+<li><code>execute(args, exec)</code> 里必须尊重 <code>exec.signal</code>（取消信号），长任务要考虑后台任务注册；</li>
+<li>返回一个规范的 JSON 值，不要返回给人类看的散文（那是 render 的活）。</li>
+</ul>
+<h2>配置：Schemastery</h2>
+<p>插件通过同名 <code>Config</code> schema 接收配置：</p>
+<pre><code class="language-ts">import Schema from &#39;@deepseek-ai/schemastery&#39;
+
+export interface Config {
+  greeting: string
+  maxRetries: number
+}
+
+export const Config = Schema.object({
+  greeting: Schema.string().default(&#39;Hello&#39;),
+  maxRetries: Schema.number().default(3),
+})
+</code></pre>
+<p>原则：部署环境可能不同的值（超时、条数、开关）都必须是配置项，不能硬编码；非法配置在加载时大声失败。</p>
+<h2>组合机制：bundle、profile、patch</h2>
+<p>三个概念：</p>
+<ol>
+<li><strong>bundle（组合包）</strong>：一个带 <code>dsh.bundle</code> manifest 的 npm 包，贡献一段 <code>cordis.patch.yml</code>（插件行）。这是插件作者分发的东西。</li>
+<li><strong>profile</strong>：<code>$DSH_HOME/profiles/&lt;name&gt;</code> 下的一份可启动组合，按有序 <code>bundles</code> 列表叠加。</li>
+<li><strong>patch（覆盖层）</strong>：YAML patch 行数组，后加的层按 <code>id</code> 覆盖先前的行。</li>
+</ol>
+<p>层顺序（后层胜出）：</p>
+<pre><code class="language-text">profile.bundles → profile 自身 patch → $DSH_HOME 级 patch → 命令行 --patch
+</code></pre>
+<h2>官方仓库布局</h2>
+<pre><code class="language-text">vendor/      Cordis 源码（vendored，带上游 SHA）
+packages/    @deepseek-ai/dsh-* workspace 包
+  core/       会话、system-prompt、tools、agent、agent-loop
+  api/        BFF / RPC gateway
+  llm/        LLM 能力（DeepSeek provider 等）
+  fs/ shell/ web/ lsp/ subprocess/  各种能力包
+  todo/ plan/ goal/ skill/ workflow/ 业务插件
+  bundle/     可安装的 dsh --profile patch 层
+examples/    可运行的 cordis.yml 示例（如 web-schedule）
+docs/        架构、目录、cookbook
+</code></pre>
+<h2>与 MCP 的关系</h2>
+<p>dsh 有两类工具来源：</p>
+<ul>
+<li><strong>原生工具</strong>：用 <code>defineTool</code> 直接注册（todo、fs、bash、web…）；</li>
+<li><strong>MCP 工具</strong>：通过 <code>@deepseek-ai/dsh-mcp-client</code> 连接外部 MCP 服务器，把远程工具映射进注册表。</li>
+</ul>
+<p>所以「写 dsh 插件」和「接 MCP」是互补的：MCP 适合复用现成生态，原生插件适合深度定制（UI 卡片、策略、会话状态）。</p>
+<h2>关键术语表</h2>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>harness</td>
+<td>让 agent 跑起来的框架层（任务分解、工具、会话）</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>Cordis 上下文，插件的注册入口</td>
+</tr>
+<tr>
+<td>inject</td>
+<td>声明依赖，Cordis 保证就绪顺序</td>
+</tr>
+<tr>
+<td>effect</td>
+<td>有清理函数的副作用注册</td>
+</tr>
+<tr>
+<td>canonical value</td>
+<td>工具返回的规范 JSON 值（模型与程序共用）</td>
+</tr>
+<tr>
+<td>render intent</td>
+<td>UI 卡片声明（generic/terminal/diff/search/web）</td>
+</tr>
+<tr>
+<td>bundle / profile / patch</td>
+<td>分发单元 / 启动组合 / 覆盖层</td>
+</tr>
+<tr>
+<td>schema</td>
+<td>作者面 DSL（parameters/output/Config），自动生成 JSON Schema</td>
+</tr>
+</tbody></table>
+<p>下一篇：<a href="./zh-03-plugin.md">《手把手写第一个 dsh 插件》</a></p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
