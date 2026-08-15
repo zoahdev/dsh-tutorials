@@ -10,6 +10,7 @@
 | [zh-02-architecture.md](./zh-02-architecture.md) | 架构解读：一切皆插件、Cordis、工具 DSL、bundle/profile/patch |
 | [zh-03-plugin.md](./zh-03-plugin.md) | 手把手写第一个插件（配套 dsh-github-release-radar 源码） |
 | [zh-04-contributing.md](./zh-04-contributing.md) | 贡献者路线图：官方认可的方式与 14 天计划 |
+| [zh-05-intelligence.md](./zh-05-intelligence.md) | 一分钟尽调任何仓库：dsh-github-intelligence 实战（含真实输出） |
 
 ## English
 
@@ -19,11 +20,13 @@
 | [en-02-architecture.md](./en-02-architecture.md) | Architecture summary + glossary |
 | [en-03-plugin.md](./en-03-plugin.md) | Build your first plugin (full translation) |
 | [en-04-contributing.md](./en-04-contributing.md) | Contributor roadmap (summary) |
+| [en-05-intelligence.md](./en-05-intelligence.md) | One-minute repo due diligence with real output |
 
 ## 配套资源
 
 - 插件源码（GitHub）：[zoahdev/dsh-github-release-radar](https://github.com/zoahdev/dsh-github-release-radar)
 - 插件模板（GitHub）：[zoahdev/dsh-plugin-template](https://github.com/zoahdev/dsh-plugin-template)
+- 在线站点（GitHub Pages）：[zoahdev.github.io/dsh-tutorials](https://zoahdev.github.io/dsh-tutorials/)
 - 插件源码（本地副本）：[outputs/deepseek-plugin](../deepseek-plugin/README.md)
 - 社区材料包：[outputs/community-kit](../community-kit/README.md)
 
