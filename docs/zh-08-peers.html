@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a>
+</header>
+<div class="wrap">
+<h1>dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 基于 dsh 0.1.0-rc.6 实测（npm / pnpm 行为已实际验证）</p>
+</blockquote>
+<h2>一个没人讲的 semver 事实</h2>
+<p><code>^0.1.0-rc.6</code> 的含义：</p>
+<pre><code class="language-text">&gt;=0.1.0-rc.6 且 &lt;0.2.0
+</code></pre>
+<p>它<strong>匹配</strong>：<code>0.1.0-rc.6</code>、<code>0.1.0-rc.7</code>、<code>0.1.0</code>、<code>0.1.1</code>……
+它<strong>不匹配</strong>：<code>0.1.0-rc.3</code>、<code>0.0.9</code>、<code>0.2.0</code>。</p>
+<p>所以把 peer 写成 <code>^0.1.0-rc.6</code> 不是&quot;锁定&quot;，只是一个下限。<strong>如果你宿主里已经装了 <code>0.1.0-rc.3</code>，插件要求 rc.6，两者直接冲突。</strong></p>
+<h2>三种安装器，三种表现</h2>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>npm</th>
+<th>pnpm（默认）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>宿主已有旧 RC <code>0.1.0-rc.3</code></td>
+<td><code>ERESOLVE</code> peer dependency conflict，直接失败</td>
+<td>可能只给一条泛泛警告，继续装</td>
+</tr>
+<tr>
+<td>宿主没有 dsh-tools</td>
+<td>尝试装 peer</td>
+<td><code>autoInstallPeers=false</code> 时<strong>不装</strong>，运行时才炸</td>
+</tr>
+<tr>
+<td>宿主是 rc.6</td>
+<td>正常</td>
+<td>正常</td>
+</tr>
+</tbody></table>
+<p>pnpm 的&quot;静默&quot;最坑：插件 <code>apply()</code> 里 <code>import { defineTool }</code> 链到了旧版，如果旧版没有新 API，报错出现在 agent 第一次调工具时，而不是安装时。</p>
+<h2>三层防护（模板怎么做的）</h2>
+<ol>
+<li><strong>peer 声明</strong>：只写实测过的范围 <code>^0.1.0-rc.6</code>，不假装兼容更宽；</li>
+<li><strong>运行时守卫</strong>：<code>apply()</code> 里解析实际链到的 <code>@deepseek-ai/dsh-tools</code> 版本，不满足就抛出带指引的明确错误（见 <a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template/src/version.ts</a>）；</li>
+<li><strong>安装验证</strong>：CI 里把 tarball 装进全新宿主，跑真实工具调用（<a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template 的 integration-test</a>）。</li>
+</ol>
+<h2>用户侧：遇到 ERESOLVE / peer conflict 怎么办</h2>
+<pre><code class="language-sh"># 1. 先看宿主里实际是什么版本
+pnpm why @deepseek-ai/dsh-tools
+# 或
+npm ls @deepseek-ai/dsh-tools
+
+# 2. 把宿主升级到插件验证过的版本（0.1.0-rc.6），再装插件
+dsh upgrade   # 或按官方发布渠道升级
+dsh plugin --profile web add &lt;你的插件&gt;
+
+# 3. 确认真的解析对了
+dsh --profile web --dump-config
+</code></pre>
+<p><strong>不要</strong>用 <code>--legacy-peer-deps</code> 绕过：那是&quot;假装没冲突&quot;，插件运行时大概率照炸。</p>
+<h2>插件作者侧：发布前必查</h2>
+<pre><code class="language-sh">node /path/to/dsh-plugin-doctor/lib/bin.js --full .
+</code></pre>
+<p><code>install</code> 检查会真实执行 <code>dsh plugin add</code> + <code>--dump-config</code>；再配合全新宿主里的真实工具调用，才算验证过 peer 兼容性。</p>
+<h2>相关资源</h2>
+<ul>
+<li>模板（含守卫源码）：<a href="https://github.com/zoahdev/dsh-plugin-template">dsh-plugin-template</a></li>
+<li>自检工具：<a href="https://github.com/zoahdev/dsh-plugin-doctor">dsh-plugin-doctor</a></li>
+<li>官方插件发布指南：<a href="https://github.com/deepseek-ai/deepseek-harness/blob/HEAD/docs/user/develop/basic/publish.md">publish.md</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
