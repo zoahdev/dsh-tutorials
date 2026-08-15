@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用 dsh-plugin-search 在 DSH 里找插件 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a>
+</header>
+<div class="wrap">
+<h1>用 dsh-plugin-search 在 DSH 里找插件</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 命令实测于 Windows（Node 24 / pnpm 11 / dsh 0.1.0-rc.6）</p>
+</blockquote>
+<h2>为什么需要它</h2>
+<p>写插件前先搜一遍，是最省时间的习惯。dsh 生态已经有不少插件，但分散在 npm 和 awesome 清单里——<a href="https://github.com/zoahdev/dsh-plugin-search">dsh-plugin-search</a> 让 agent 在 DSH 里直接搜，不用切出去翻网页。</p>
+<h2>安装</h2>
+<pre><code class="language-sh">dsh plugin --profile web add https://github.com/zoahdev/dsh-plugin-search/releases/download/v1.0.0/dsh-plugin-search-1.0.0.tgz
+</code></pre>
+<h2>三个工具</h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dsh_search_plugins</code></td>
+<td>同时搜 npm registry + awesome-dsh-plugin 精选清单，npm 优先、去重、带版本与来源</td>
+</tr>
+<tr>
+<td><code>dsh_plugin_lookup</code></td>
+<td>按精确包名查 npm 元数据（最新版本/描述/主页/仓库/作者）</td>
+</tr>
+<tr>
+<td><code>dsh_awesome_top</code></td>
+<td>浏览当前精选清单前 N 条</td>
+</tr>
+</tbody></table>
+<h2>在 DSH 里对 agent 说</h2>
+<blockquote>
+<p>帮我找一个能监控 GitHub release 的 dsh 插件，然后查一下它的详情。</p>
+</blockquote>
+<p>agent 会先调 <code>dsh_search_plugins(&quot;github release&quot;)</code>，再对最相关的结果调 <code>dsh_plugin_lookup</code>，把版本、仓库、描述一起给你。</p>
+<h2>完整工作流：搜 → 查 → 体检 → 装</h2>
+<pre><code class="language-text">1. dsh_search_plugins(&quot;github release&quot;)   # 找候选
+2. dsh_plugin_lookup(&quot;dsh-github-release-radar&quot;)  # 看详情
+3. dsh-plugin-doctor 的 plugin_check       # 发布前/装前体检（manifest/patch/build/install）
+4. dsh plugin --profile web add &lt;tarball&gt;  # 安装
+</code></pre>
+<p>这套组合把&quot;找插件&quot;到&quot;放心安装&quot;串成一条链。</p>
+<h2>注意事项</h2>
+<ul>
+<li><code>dsh_plugin_lookup</code> 返回的是 npm 的 <code>latest</code> 标签版本。对 <code>@deepseek-ai/dsh-tools</code> 这类包，<code>latest</code> 可能是旧 RC（实测 <code>0.0.1-rc.1</code>），真正在用的是 <code>next</code> 标签（<code>0.1.0-rc.6</code>）——判断插件兼容性时看具体版本，别只看 latest（详见 <a href="./zh-08-peers.html">prerelease peer 排障</a>）。</li>
+<li>搜索关键词用任务描述比用包名更容易命中（例如 &quot;github release&quot; 而不是 &quot;radar&quot;）。</li>
+</ul>
+<h2>相关资源</h2>
+<ul>
+<li>仓库：<a href="https://github.com/zoahdev/dsh-plugin-search">zoahdev/dsh-plugin-search</a></li>
+<li>官方讨论 #1715：<a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1715">链接</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
