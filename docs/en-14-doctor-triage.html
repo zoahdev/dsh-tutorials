@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./zh-11-prepare-crash.html">调试 dsh 插件崩溃：undefined.prepare 全家桶</a><a href="./zh-12-visibility.html">在 dsh 生态被看见：24 小时复盘</a><a href="./zh-13-market.html">在 DSH 里一键装插件：dsh-subscribe in-harness 市场实战</a><a href="./zh-14-doctor-triage.html">dsh-plugin-doctor 排障手册：profile-shadow / manifest-bom / dsh-doctor/v1 契约</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a><a href="./en-11-prepare-crash.html">Debugging the undefined.prepare Crash Family</a><a href="./en-12-visibility.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-13-market.html">One-Click Plugin Install Inside DSH: the dsh-subscribe In-Harness Market</a><a href="./en-14-doctor-triage.html">dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract</a>
+</header>
+<div class="wrap">
+<h1>dsh-plugin-doctor Triage: profile-shadow / manifest-bom / the dsh-doctor/v1 Contract</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · Repo: <a href="https://github.com/zoahdev/dsh-plugin-doctor">https://github.com/zoahdev/dsh-plugin-doctor</a> (v1.6.0)</p>
+</blockquote>
+<h2>When DSH misbehaves, run one command</h2>
+<pre><code class="language-sh">npx dsh-plugin-doctor --profile ~/.dsh/profiles/web --json
+</code></pre>
+<p>Exit codes: <code>0</code> all pass / <code>1</code> warnings / <code>2</code> FAIL.</p>
+<h2>Check 1: profile-shadow (#1697 dual-instance)</h2>
+<p>Symptom: after installing any plugin that depends on <code>@deepseek-ai/dsh-tools</code>, every tool call crashes with <code>Cannot read properties of undefined (reading &#39;prepare&#39;)</code>, and the session gets stuck.</p>
+<p>Root cause: with <code>nodeLinker: hoisted</code>, the plugin&#39;s <code>dsh-tools</code> copy is hoisted to the profile&#39;s top-level <code>node_modules</code>; the host and the copy use different <code>TOOL_RUNTIME_SCHEDULER</code> symbols.</p>
+<p>Diagnostic: <code>profile-shadow: fail</code> naming the shadowed packages. Fix direction: <code>Symbol.for</code> + protocol-version guard (cherry-pick-ready branch exists); temporary workaround: reinstall the profile so the host copy resolves first.</p>
+<h2>Check 2: manifest-bom (#1842 boot crash)</h2>
+<p>Symptom: <code>dsh web</code> crashes at boot with <code>Unexpected token</code> and no BOM hint.</p>
+<p>Root cause: the profile&#39;s <code>package.json</code> starts with a UTF-8 BOM; <code>readProfileManifest</code> calls <code>JSON.parse(readFileSync(..., &#39;utf8&#39;))</code> directly.</p>
+<p>Diagnostic: <code>manifest-bom: fail</code>. Fix: re-save as UTF-8 without BOM (or drop the first three bytes). Upstream one-line patch is staged on <code>fix/profile-manifest-bom-strip</code>.</p>
+<h2>Output contract: dsh-doctor/v1</h2>
+<p><code>--json</code> always emits the shared envelope (schema, exitCode, summary, lowercase check statuses), so CI, marketplaces, and support flows can consume either doctor implementation interchangeably. Cross-implementation acceptance harness:</p>
+<pre><code class="language-sh">node scripts/doctor-contract-check.mjs --impl1 &quot;node lib/bin.js&quot;
+</code></pre>
+<p>It runs clean / BOM / shadow fixtures and asserts exit codes and envelope shape.</p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
