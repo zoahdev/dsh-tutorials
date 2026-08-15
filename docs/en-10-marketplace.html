@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publishing to the DSH Marketplace · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./zh-05-intelligence.html">一分钟尽调任何仓库：dsh-github-intelligence 实战</a><a href="./zh-06-doctor.html">用 dsh-plugin-doctor 给插件做体检</a><a href="./zh-07-awesome.html">让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist</a><a href="./zh-08-peers.html">dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE</a><a href="./zh-09-search.html">用 dsh-plugin-search 在 DSH 里找插件</a><a href="./zh-10-marketplace.html">在 DSH Marketplace 发布你的插件</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a><a href="./en-05-intelligence.html">One-Minute Repo Due Diligence</a><a href="./en-06-doctor.html">Health-Check Your dsh Plugin</a><a href="./en-07-awesome.html">Passing the awesome-dsh-plugin Review</a><a href="./en-08-peers.html">Prerelease Peers and ERESOLVE</a><a href="./en-09-search.html">Finding Plugins with dsh-plugin-search</a><a href="./en-10-marketplace.html">Publishing to the DSH Marketplace</a>
+</header>
+<div class="wrap">
+<h1>Publishing Your Plugin to the DSH Marketplace</h1>
+<blockquote>
+<p>By zoahdev · 2026-08-15 · Based on a real submission (ydhrdh/dsh-marketplace PR #1) and real installs</p>
+</blockquote>
+<h2>What it is</h2>
+<p><a href="https://github.com/ydhrdh/dsh-marketplace">dsh-marketplace</a> (discussion <a href="https://github.com/deepseek-ai/deepseek-harness/discussions/1752">#1752</a>) is an open-source plugin marketplace: one JSON manifest per plugin, PR-based review, git history as the audit log, zero-cost static hosting.</p>
+<h2>Requirements</h2>
+<ul>
+<li>The plugin is publicly installable: npm (<code>npm</code>), git (<code>github:owner/repo</code>), or local (<code>local</code>).</li>
+<li>The manifest passes <code>npm run validate</code>.</li>
+<li><code>install.command</code> uses the <code>{profile}</code> placeholder.</li>
+<li>The repo carries the <code>dsh-plugin</code> topic.</li>
+</ul>
+<h2>Minimal manifest</h2>
+<p>Required: <code>id</code> (matches the directory), <code>name</code>, <code>version</code>, <code>description</code>, <code>author{name,url}</code>, <code>license</code>, <code>category</code>, <code>install{target,spec,command}</code>, <code>repository</code>. Set <code>verified: false</code> on first submission; maintainers flip it after review.</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;dsh-plugin-doctor&quot;,
+  &quot;name&quot;: &quot;Plugin Doctor&quot;,
+  &quot;version&quot;: &quot;1.3.0&quot;,
+  &quot;category&quot;: &quot;tools&quot;,
+  &quot;install&quot;: {
+    &quot;target&quot;: &quot;git&quot;,
+    &quot;spec&quot;: &quot;github:zoahdev/dsh-plugin-doctor&quot;,
+    &quot;command&quot;: &quot;dsh plugin --profile {profile} add github:zoahdev/dsh-plugin-doctor&quot;
+  },
+  &quot;repository&quot;: &quot;https://github.com/zoahdev/dsh-plugin-doctor&quot;
+}
+</code></pre>
+<h2>Flow</h2>
+<pre><code class="language-sh">git clone https://github.com/ydhrdh/dsh-marketplace
+mkdir -p registry/plugins/&lt;your-plugin-id&gt;
+npm install
+npm run validate
+npm run build
+# open a PR; CI must be green
+</code></pre>
+<h2>Real trap: git installs are blocked by allowBuilds</h2>
+<p>Installing a git-hosted plugin triggers pnpm 11&#39;s build-script gate:</p>
+<pre><code class="language-text">[ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED] ... not in the &quot;allowBuilds&quot; allowlist
+</code></pre>
+<p>Add the exact key the CLI prints to the profile&#39;s <code>pnpm-workspace.yaml</code>, then re-run <code>dsh plugin add</code>. It succeeds and <code>--dump-config</code> shows the plugin row.</p>
+<p><strong>Tip</strong>: include your real install output (both the failure and the success) in the PR description — it makes maintainer review much faster. That&#39;s exactly how our PR #1 is written.</p>
+<h2>References</h2>
+<ul>
+<li>Our submission PR: <a href="https://github.com/ydhrdh/dsh-marketplace/pull/1">https://github.com/ydhrdh/dsh-marketplace/pull/1</a> (5 plugins)</li>
+<li>Marketplace repo: <a href="https://github.com/ydhrdh/dsh-marketplace">https://github.com/ydhrdh/dsh-marketplace</a></li>
+<li>Live site: <a href="https://ydhrdh.github.io/dsh-marketplace/">https://ydhrdh.github.io/dsh-marketplace/</a></li>
+</ul>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
