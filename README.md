@@ -15,6 +15,7 @@
 | [zh-07-awesome.md](./zh-07-awesome.md) | 让插件通过 awesome-dsh-plugin 的 Review：维护者 Checklist |
 | [zh-08-peers.md](./zh-08-peers.md) | dsh 插件依赖陷阱：prerelease peer 版本与 ERESOLVE |
 | [zh-09-search.md](./zh-09-search.md) | 用 dsh-plugin-search 在 DSH 里找插件（搜→查→体检→装） |
+| [zh-10-marketplace.md](./zh-10-marketplace.md) | 在 DSH Marketplace 发布插件（含 allowBuilds 实测坑） |
 
 ## English
 
@@ -29,6 +30,7 @@
 | [en-07-awesome.md](./en-07-awesome.md) | Passing the awesome-dsh-plugin review checklist |
 | [en-08-peers.md](./en-08-peers.md) | Prerelease peers and ERESOLVE troubleshooting |
 | [en-09-search.md](./en-09-search.md) | Finding plugins from inside DSH |
+| [en-10-marketplace.md](./en-10-marketplace.md) | Publishing to the DSH Marketplace |
 
 ## 配套资源
 
