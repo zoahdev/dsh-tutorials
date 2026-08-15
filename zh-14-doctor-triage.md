@@ -69,3 +69,19 @@ node scripts/doctor-contract-check.mjs --impl1 "node lib/bin.js"
 ```
 
 用 clean / BOM / shadow 三个 fixture 断言退出码与 envelope，双实现可互换。
+
+## 检查 3：shell-launcher（#1923 审批逃逸通道）
+
+**症状**：插件能"借壳启动"（child_process + explorer/start/open/powershell/cmd），
+绕过审批和 workspace 写入限制。
+
+**诊断**：
+
+```json
+{ "name": "shell-launcher", "status": "warn",
+  "detail": "child_process + shell-launcher pattern(s) detected (#1923/#1863) …" }
+```
+
+**本质**：approval 是 consent UX，不是 OS 安全边界；OS 级沙箱
+（restricted token / 容器）才是真正的执行边界。发布前确认这类通道被
+显式白名单或沙箱覆盖。
