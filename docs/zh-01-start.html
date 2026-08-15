@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>从零上手 DeepSeek Harness：安装、启动与第一次对话 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-01-start.html">从零上手 DeepSeek Harness：安装、启动与第一次对话</a><a href="./zh-02-architecture.html">理解 dsh 架构：一切皆插件与 Cordis</a><a href="./zh-03-plugin.html">手把手写第一个 dsh 插件：GitHub Release 雷达</a><a href="./zh-04-contributing.html">在 dsh 生态里被看见：贡献者路线图</a><a href="./en-01-start.html">Getting Started with DeepSeek Harness</a><a href="./en-02-architecture.html">Understanding dsh Architecture</a><a href="./en-03-plugin.html">Build Your First dsh Plugin</a><a href="./en-04-contributing.html">Getting Noticed in the dsh Ecosystem</a>
+</header>
+<div class="wrap">
+<h1>从零上手 DeepSeek Harness：安装、启动与第一次对话</h1>
+<blockquote>
+<p>作者：zoahdev · 2026-08-15 · 本教程所有命令均在本机（Windows + Node 24 + pnpm 11）实测</p>
+</blockquote>
+<h2>目录</h2>
+<ul>
+<li><a href="#deepseek-harness-%E6%98%AF%E4%BB%80%E4%B9%88">DeepSeek Harness 是什么</a></li>
+<li><a href="#%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82">环境要求</a></li>
+<li><a href="#%E6%96%B9%E5%BC%8F%E4%B8%80npm-%E4%B8%80%E8%A1%8C%E5%91%BD%E4%BB%A4%E5%90%AF%E5%8A%A8%E6%8E%A8%E8%8D%90%E6%96%B0%E6%89%8B">方式一：npm 一行命令启动（推荐新手）</a></li>
+<li><a href="#%E6%96%B9%E5%BC%8F%E4%BA%8C%E4%BB%8E%E6%BA%90%E7%A0%81%E8%BF%90%E8%A1%8C">方式二：从源码运行</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%AF%B9%E8%AF%9D%E9%85%8D%E7%BD%AE%E6%A8%A1%E5%9E%8B">第一次对话：配置模型</a></li>
+<li><a href="#web-ui-%E9%80%9F%E8%A7%88">Web UI 速览</a></li>
+<li><a href="#%E5%B8%B8%E8%A7%81%E5%9D%91%E5%AE%9E%E6%B5%8B%E8%B8%A9%E8%BF%87">常见坑（实测踩过）</a></li>
+<li><a href="#faq">FAQ</a></li>
+</ul>
+<h2>DeepSeek Harness 是什么</h2>
+<p>DeepSeek Harness（简称 <code>dsh</code>）是 DeepSeek 在 2026-08-13 以 MIT 协议开源的首款 Agent 产品：一个 <strong>agent harness（智能体框架）</strong>。它不是一个模型，而是让模型使用工具、执行任务、与开发者协作的基础设施。它的核心设计是「一切皆插件」，由 Cordis 驱动。</p>
+<blockquote>
+<p>仓库：<a href="https://github.com/deepseek-ai/deepseek-harness">https://github.com/deepseek-ai/deepseek-harness</a>
+当前状态：开发者预览 v0.1，迭代极快，<strong>会有破坏性变更</strong>（官方原话）。</p>
+</blockquote>
+<h2>环境要求</h2>
+<ul>
+<li>Node.js <code>^22.19.0 || &gt;=24.0.0</code>（官方要求）</li>
+<li>pnpm（推荐 10+，官方仓库使用 11.x）</li>
+<li>一个 DeepSeek API Key（对话和联网搜索需要）</li>
+</ul>
+<p>检查环境：</p>
+<pre><code class="language-sh">node -v
+pnpm -v
+</code></pre>
+<p>如果 <code>node</code> 找不到，去 <a href="https://nodejs.org">https://nodejs.org</a> 安装 LTS 或 24.x；Windows 安装后需要<strong>新开终端</strong>让 PATH 生效。</p>
+<h2>方式一：npm 一行命令启动（推荐新手）</h2>
+<pre><code class="language-sh">npx @deepseek-ai/dsh web
+</code></pre>
+<p>实测输出（2026-08-15，dsh 0.1.0-rc.6）：</p>
+<pre><code class="language-text">dsh web: http://127.0.0.1:3080
+</code></pre>
+<p>浏览器打开 <a href="http://127.0.0.1:3080">http://127.0.0.1:3080</a> 即可。如果 3080 被占用：</p>
+<pre><code class="language-sh">npx @deepseek-ai/dsh web --port 4099
+</code></pre>
+<p>也可以用 <code>--host</code> 指定监听地址（默认 127.0.0.1）。</p>
+<h2>方式二：从源码运行</h2>
+<p>适合想读源码、改源码或给官方提反馈的开发者：</p>
+<pre><code class="language-sh">git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build
+pnpm dsh web
+</code></pre>
+<p>官方仓库是 pnpm workspace（vendor + packages/<em>/</em> + apps），<code>pnpm install</code> 需要几分钟，属正常现象。源码运行时 CLI 通过 tsx 直接跑 <code>apps/cli/src/bin.ts</code>。</p>
+<blockquote>
+<p>注意：官方仓库根目录有 <code>AGENTS.md</code>，给官方贡献前请先读它（重要约定：注册都是 effect、构建前先跑针对性检查等）。</p>
+</blockquote>
+<h2>第一次对话：配置模型</h2>
+<p>Web UI 打开后：</p>
+<ol>
+<li>进入 <strong>Providers / Models</strong> 页面（左侧设置）。</li>
+<li>默认模型是 <code>deepseek-v4-flash</code>（provider 为 <code>deepseek-official</code>）。</li>
+<li>填入你的 DeepSeek API Key。也可以提前设好环境变量：</li>
+</ol>
+<pre><code class="language-sh"># PowerShell
+$env:DEEPSEEK_API_KEY = &quot;sk-你的key&quot;
+</code></pre>
+<ol start="4">
+<li>回到会话页，输入你的第一句话，例如：</li>
+</ol>
+<blockquote>
+<p>你好，介绍一下你自己，并列出你可以使用的工具。</p>
+</blockquote>
+<p>没有 API Key 时，界面能打开但对话会报鉴权错误——这是预期行为，不是 bug。</p>
+<h2>Web UI 速览</h2>
+<ul>
+<li><strong>会话（Session）</strong>：一次独立对话，状态（todo、计划、文件改动）按会话隔离。</li>
+<li><strong>工具卡片</strong>：模型调用工具时，右侧/下方会显示卡片（终端、diff、搜索等），工具作者通过 <code>presentCall</code>/<code>presentResult</code> 声明卡片形态。</li>
+<li><strong>模型设置</strong>：选择 provider/model、自定义模型地址（OpenAI 兼容接口也可配置）。</li>
+<li><strong>时区</strong>：浏览器会把 IANA 时区附到每次请求，模型默认按你的时区理解&quot;今天/明天&quot;。</li>
+</ul>
+<h2>常见坑（实测踩过）</h2>
+<h3>1. 端口 3080 被占用</h3>
+<pre><code class="language-text">listen EADDRINUSE: address already in use 127.0.0.1:3080
+</code></pre>
+<p>解决：<code>--port 0</code> 让系统随机分配，或指定 <code>--port 4099</code>。</p>
+<h3>2. 没有 Node / pnpm 命令</h3>
+<p>Windows 上最常见的坑。安装 Node 后必须<strong>新开终端</strong>；pnpm 可用 <code>corepack enable</code> 启用，或 <code>npm install -g pnpm</code>。</p>
+<h3>3. <code>npx @deepseek-ai/dsh web</code> 提示版本错乱</h3>
+<p>社区插件请认准 <code>0.1.0-rc.6</code> 这条 release train。npm 上 <code>@deepseek-ai/dsh-tools</code> 的 latest 标签仍指向旧的 <code>0.0.1-rc.1</code>，它依赖未发布的包，<strong>独立安装会 404 失败</strong>。写插件时用 <code>^0.1.0-rc.6</code>。</p>
+<h3>4. 中文文档乱码</h3>
+<p>仓库部分中文文档在 Windows PowerShell 默认编码下显示乱码（UTF-8 被按 GBK 读取）。用 VS Code 打开或执行：</p>
+<pre><code class="language-powershell">Get-Content docs/xxx.md -Encoding UTF8
+</code></pre>
+<h3>5. 插件装不上：git 安装需要允许构建</h3>
+<p><code>dsh plugin add github:xxx/yyy</code> 时 pnpm 默认拒绝 git 依赖的 <code>prepare</code> 脚本。dsh 会提示你把一行 <code>allowBuilds:</code> 配置加进 profile 的 <code>pnpm-workspace.yaml</code>，照做即可；只对信得过的源码仓库授权。</p>
+<h2>FAQ</h2>
+<p><strong>Q：dsh 需要 GPU 吗？</strong>
+不需要。dsh 是框架，模型走 DeepSeek API（也可配其他 OpenAI 兼容 provider）。</p>
+<p><strong>Q：官方接受 PR 吗？</strong>
+目前不接受外部 PR（CONTRIBUTING.md 明确说明），但非常欢迎 Discussions 反馈、插件生态、教程和答疑。</p>
+<p><strong>Q：<code>web</code> 和 <code>--profile web</code> 什么关系？</strong>
+<code>dsh web</code> 是 <code>dsh --profile web</code> 的别名。<code>dsh plugin --profile web add &lt;包&gt;</code> 可以把插件装进 web profile。</p>
+<p><strong>Q：插件会弄坏我的会话数据吗？</strong>
+会话有持久化（默认 JSONL，可选 SQLite），插件加载失败会报错但不销毁已有会话；配置改动会热替换插件（HMR）。</p>
+<p>下一篇：<a href="./zh-02-architecture.md">《理解 dsh 架构：一切皆插件与 Cordis》</a></p>
+
+<footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
+</div>
+</body>
+</html>
