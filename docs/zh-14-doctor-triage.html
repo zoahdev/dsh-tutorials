@@ -75,6 +75,16 @@
 <pre><code class="language-sh">node scripts/doctor-contract-check.mjs --impl1 &quot;node lib/bin.js&quot;
 </code></pre>
 <p>用 clean / BOM / shadow 三个 fixture 断言退出码与 envelope，双实现可互换。</p>
+<h2>检查 3：shell-launcher（#1923 审批逃逸通道）</h2>
+<p><strong>症状</strong>：插件能&quot;借壳启动&quot;（child_process + explorer/start/open/powershell/cmd），
+绕过审批和 workspace 写入限制。</p>
+<p><strong>诊断</strong>：</p>
+<pre><code class="language-json">{ &quot;name&quot;: &quot;shell-launcher&quot;, &quot;status&quot;: &quot;warn&quot;,
+  &quot;detail&quot;: &quot;child_process + shell-launcher pattern(s) detected (#1923/#1863) …&quot; }
+</code></pre>
+<p><strong>本质</strong>：approval 是 consent UX，不是 OS 安全边界；OS 级沙箱
+（restricted token / 容器）才是真正的执行边界。发布前确认这类通道被
+显式白名单或沙箱覆盖。</p>
 
 <footer>By <a href="https://github.com/zoahdev">zoahdev</a> · <a href="https://github.com/zoahdev/dsh-tutorials">GitHub 仓库</a> · DeepSeek Harness 教程</footer>
 </div>
