@@ -56,7 +56,9 @@
 | [zh-22-session-shelf.md](./zh-22-session-shelf.md) | dsh-shelf：给你的 dsh 会话一个书架 |
 | [en-22-session-shelf.md](./en-22-session-shelf.md) | dsh-shelf: give your dsh sessions a shelf |
 | [zh-23-doctor-action.md](./zh-23-doctor-action.md) | dsh-plugin-doctor-action：把发布前体检装进 CI |
+| [zh-24-pipeline.md](./zh-24-pipeline.md) | 插件开发流水线：8 个插件一天上线的实战复盘（骨架/质量基线/踩坑/社区闭环） |
 | [en-23-doctor-action.md](./en-23-doctor-action.md) | dsh-plugin-doctor-action: pre-publish checks in CI |
+| [en-24-pipeline.md](./en-24-pipeline.md) | The plugin pipeline: 8 verified plugins in one day (skeleton/quality gate/pitfalls/community loop) |
 
 ## 配套资源
 
