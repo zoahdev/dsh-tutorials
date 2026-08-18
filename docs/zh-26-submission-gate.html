@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通过 awesome-dsh-plugin 收录 gate · dsh tutorials · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>通过 awesome-dsh-plugin 收录 gate（Submission gate 完全指南）</h1>
+<blockquote><p>适用：任何想把自己的 dsh 插件收录进 <a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin">awesome-dsh-plugin</a> 目录的作者。本文所有行为均经实测（2026-08-19，repo 年龄 gate 场景）。</p></blockquote>
+<h2>1. Gate 检查什么</h2>
+<p>收录 PR 的 <code>Submission gate</code> 检查三件事（<code>scripts/check-submission.mjs</code> + <code>pr-gate.yml</code>）：</p>
+<p>1. <strong><code>dsh.bundle</code> manifest 存在</strong>——你的仓库/包必须声明 bundle（<code>dsh.bundle</code> 字段），否则直接拒绝；</p>
+<p>2. <strong>仓库年龄 ≥ 1 天</strong>（从 repo <code>created_at</code> 算，PR 创建时间不算）；</p>
+<p>3. <strong>仓库 commit 数 ≥ 10</strong>。</p>
+<p>三个都过 → 绿色 <code>success</code>；任何一个不过 → 红色 <code>failure</code>，PR 显示 <code>mergeStateStatus: UNSTABLE</code>（可合并但检查失败）。</p>
+<h2>2. 最常见的红灯：年龄不足</h2>
+<p>新仓库提收录 PR 时几乎必中 <code>repository is X.X days old (needs 1) — resubmit in about 15h</code>。这是<strong>有意设计</strong>（防止一次性账号刷收录），不是你的提交有问题。</p>
+<h2>3. 到点后怎么转绿（关键机制）</h2>
+<p>gate 判定是<strong>快照</strong>：年龄满足后不会自己刷新，需要一次新的 push/检查触发。两个途径：</p>
+<p><strong>A. 官方自动兜底（什么都不用做）</strong></p>
+<p>仓库的 <code>regate.yml</code> 每 6 小时（cron 在 :19 UTC）自动重跑所有&quot;aged in&quot;的 PR（判定失败原因是 <code>days old|commit(s)</code> 的自动重试），到点后 6 小时内自动转绿。<strong>唯一要做的就是等。</strong></p>
+<p><strong>B. 手动提前（想最快变绿时）</strong></p>
+<p>往 PR 分支推一个空提交戳即可触发 pr-check → gate 重评：</p>
+<pre><code>git checkout &lt;pr-branch&gt;
+git commit --allow-empty -m &quot;chore: gate re-trigger stamp&quot;
+git push origin &lt;pr-branch&gt;</code></pre>
+<p>⚠️ <strong>不要尝试用 API 重跑 workflow</strong>：<code>POST /actions/runs/{id}/rerun</code> 会返回 <code>403 Must have admin rights to Repository</code>（org 仓库只有管理员能 rerun），自己 fork 推提交才是有效路径。</p>
+<h2>4. 其它常见红灯</h2>
+<table><thead><tr><th>症状</th><th>原因</th><th>处理</th></tr></thead><tr><td><code>dsh.bundle</code> not declared</td><td>包 manifest 缺 <code>dsh.bundle</code> 字段</td><td>补上 bundle/patch 声明</td></tr><tr><td><code>repository is 0.1 days old</code></td><td>年龄 gate</td><td>等 1 天（regate 自动处理）</td></tr><tr><td><code>commit(s)</code> 不足</td><td>repo &lt; 10 commits</td><td>补真实提交（README/SECURITY/CHANGELOG/CONTRIBUTING 都算），<strong>别刷空提交充数</strong></td></tr><tr><td><code>check</code>（PR check）失败</td><td>条目格式/内容问题</td><td>读该检查的输出修到绿（gate 不重跑内容错的 PR，regate 只处理年龄/commit 类）</td></tr></table>
+<h2>5. 我们的实测数据</h2>
+<ul><li>8 个仓库（每个 10 commits）全部一次通过 commit 检查，唯一红灯是年龄；</li><li>到点时间 = <code>repo created_at + 24h</code>，精确到分钟（GitHub API 的 created_at）；</li><li>手动戳提交后 gate 在下一次 pr-check 完成后转绿；官方 regate 也会在 6h 窗口内兜底。</li></ul>
+<h2>6. 检查你的到点时间</h2>
+<pre><code>gh api repos/&lt;owner&gt;/&lt;repo&gt; --jq .created_at   # repo 创建时间
+# 到点 = created_at + 24h（UTC）</code></pre>
+<p>收录后记得更新你的 README 徽章/状态，并在官方 Discussions 展示帖（如 #3123 模式）同步进度。</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>

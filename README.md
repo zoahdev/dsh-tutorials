@@ -60,6 +60,8 @@
 | [en-23-doctor-action.md](./en-23-doctor-action.md) | dsh-plugin-doctor-action: pre-publish checks in CI |
 | [zh-25-community-workflow.md](./zh-25-community-workflow.md) | 社区贡献工作流：从 bug 报告到证据级回复（值班/核验/GraphQL/家族化） |
 | [en-25-community-workflow.md](./en-25-community-workflow.md) | Community contribution workflow: evidence-grade replies (triage/verify/GraphQL/family-ize) |
+| [zh-26-submission-gate.md](./zh-26-submission-gate.md) | 通过 awesome-dsh-plugin 收录 gate：三个检查/年龄门/regate 自动兜底/403 坑/故障表 |
+| [en-26-submission-gate.md](./en-26-submission-gate.md) | Passing the awesome-dsh-plugin Submission gate: checks / age gate / regate fallback / 403 pitfall / troubleshooting |
 | [en-24-pipeline.md](./en-24-pipeline.md) | The plugin pipeline: 8 verified plugins in one day (skeleton/quality gate/pitfalls/community loop) |
 
 ## 配套资源

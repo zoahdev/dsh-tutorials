@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passing the awesome-dsh-plugin Submission gate · dsh tutorials · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>Passing the awesome-dsh-plugin Submission gate (complete guide)</h1>
+<blockquote><p>For anyone submitting a dsh plugin to the <a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin">awesome-dsh-plugin</a> curated list. Every behavior below was measured in practice (2026-08-19, repo-age gate scenario).</p></blockquote>
+<h2>1. What the gate checks</h2>
+<p>The <code>Submission gate</code> on listing PRs checks three things (<code>scripts/check-submission.mjs</code> + <code>pr-gate.yml</code>):</p>
+<p>1. <strong>A <code>dsh.bundle</code> manifest exists</strong> — your repo/package must declare the bundle, otherwise it is rejected outright;</p>
+<p>2. <strong>The repo is at least 1 day old</strong> (from the repo <code>created_at</code>, NOT the PR creation time);</p>
+<p>3. <strong>The repo has &gt;= 10 commits</strong>.</p>
+<p>All three pass -&gt; green <code>success</code>; any failure -&gt; red <code>failure</code>, and the PR shows <code>mergeStateStatus: UNSTABLE</code> (mergeable but checks failing).</p>
+<h2>2. The most common red light: repo age</h2>
+<p>New repos almost always hit <code>repository is X.X days old (needs 1) — resubmit in about 15h</code>. This is intentional (it stops one-shot accounts from flooding the list), not a problem with your submission.</p>
+<h2>3. How it turns green (the key mechanism)</h2>
+<p>The gate verdict is a snapshot: it does not refresh itself once the age passes; it needs a new push/check. Two paths:</p>
+<p><strong>A. Official fallback (do nothing)</strong></p>
+<p>The repo's <code>regate.yml</code> runs every 6h (cron at :19 UTC) and automatically re-runs PRs that &quot;aged in&quot; (failure reason matching <code>days old|commit(s)</code>). After the age passes, the gate turns green within 6h automatically. <strong>All you have to do is wait.</strong></p>
+<p><strong>B. Manual early trigger (when you want it green ASAP)</strong></p>
+<p>Push an empty commit to the PR branch to re-fire pr-check -&gt; gate re-evaluation:</p>
+<pre><code>git checkout &lt;pr-branch&gt;
+git commit --allow-empty -m &quot;chore: gate re-trigger stamp&quot;
+git push origin &lt;pr-branch&gt;</code></pre>
+<p>⚠️ <strong>Do not try to re-run the workflow via API</strong>: <code>POST /actions/runs/{id}/rerun</code> returns <code>403 Must have admin rights to Repository</code> (only org admins can rerun). Pushing from your fork is the working path.</p>
+<h2>4. Other common red lights</h2>
+<table><thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead><tr><td><code>dsh.bundle</code> not declared</td><td>manifest missing <code>dsh.bundle</code></td><td>add the bundle/patch declaration</td></tr><tr><td><code>repository is 0.1 days old</code></td><td>age gate</td><td>wait 1 day (regate handles it)</td></tr><tr><td><code>commit(s)</code> insufficient</td><td>repo has &lt; 10 commits</td><td>add real commits (README/SECURITY/CHANGELOG/CONTRIBUTING all count); do NOT pad with empty commits</td></tr><tr><td><code>check</code> (PR check) fails</td><td>entry format/content issue</td><td>read that check's output and fix; the gate does not re-run content-broken PRs (regate only handles age/commit classes)</td></tr></table>
+<h2>5. Our measured data</h2>
+<ul><li>8 repos (10 commits each) all passed the commit check first try; the only red light was age;</li><li>Eligibility time = <code>repo created_at + 24h</code>, precise to the minute (GitHub API <code>created_at</code>);</li><li>After a manual stamp push, the gate turns green once pr-check completes; the official regate also covers you within the 6h window.</li></ul>
+<h2>6. Check your eligibility time</h2>
+<pre><code>gh api repos/&lt;owner&gt;/&lt;repo&gt; --jq .created_at   # repo creation time
+# eligible = created_at + 24h (UTC)</code></pre>
+<p>After listing, update your README badges/status and share progress in an official Discussions showcase thread (like the #3123 pattern).</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>
