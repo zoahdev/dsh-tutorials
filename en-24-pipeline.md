@@ -1,9 +1,5 @@
 # The DeepSeek Harness Plugin Pipeline: 8 verified plugins in one day
 
-> by zoahdev · 2026-08-18 · every plugin live on npm/GitHub with green CI (verified on Windows Node 24 / pnpm 11 / dsh 0.1.0-rc.6)
-
-# The DeepSeek Harness Plugin Pipeline: 8 verified plugins in one day
-
 > by zoahdev · 2026-08-18 · every plugin is live on npm/GitHub with green CI
 
 ## TL;DR
@@ -85,3 +81,17 @@ Method: scan the 916-plugin registry first, skip anything already taken (e.g. ds
 - Official thread: https://github.com/deepseek-ai/deepseek-harness/discussions/3123
 - Ecosystem map: https://github.com/zoahdev/dsh-ecosystem
 
+## Bonus: ecosystem supply-chain health scan (a natural extension)
+
+After shipping the 8 plugins, I used the dsh-dep-audit engine to do something nobody had done: quantify the ecosystem's supply-chain health.
+
+- **41-package sample**: 21 with `latest` != `next` (#2763 class), 5 with dead ranges in the latest version (dsh-base has 18 pre-rename 404 package names), 15 plugins whose dsh-tools peer is contradicted by the broken latest
+- **Full registry** (916 plugins / 324 npm-installable): 100 declare a dsh-tools range, **77 are hit by the broken latest (0.0.1-rc.1)**
+- **What-if**: moving official latest to 0.1.0-rc.7 fixes 69/77 (89%); the remaining 8 pin exact `0.1.0-rc.6` (authors should loosen to `^`)
+
+**Bonus findings**:
+- Found + fixed a semver edge bug in dsh-dep-audit (bare-major comparator bounds like `<5` / `>=1.2`), released 0.1.1
+- `npm view <huge-package> --json` truncates the version list (react returned only 8 versions) — verify with `npm view <pkg> versions --json`
+- Scanner is now in dsh-ecosystem/scripts with a weekly auto-snapshot workflow
+
+**Method lesson**: a tool that doesn't measure its own ecosystem only fixes individual problems; applying the tool to the ecosystem produces maintenance ROI the maintainers can act on (1 dist-tag change = 89% of the impact gone).

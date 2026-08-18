@@ -1,9 +1,5 @@
 # DeepSeek Harness 插件开发流水线：8 个插件一天上线的实战复盘
 
-> 作者：zoahdev · 2026-08-18 · 全部插件已在 npm/GitHub 上线并通过 CI（Windows Node 24 / pnpm 11 / dsh 0.1.0-rc.6 实测）
-
-# DeepSeek Harness 插件开发流水线：8 个插件一天上线的实战复盘
-
 > 作者：zoahdev · 2026-08-18 · 全部插件均已在 npm/GitHub 上线并通过 CI
 
 ## 为什么写这篇
@@ -98,3 +94,17 @@ CI 三件套（每个仓库都配了）：
 - 官方展示帖：https://github.com/deepseek-ai/deepseek-harness/discussions/3123
 - 生态地图：https://github.com/zoahdev/dsh-ecosystem
 
+## 番外：生态供应链健康扫描（8 插件方法论的自然延伸）
+
+发布 8 个插件后，我用 dsh-dep-audit 的引擎做了一件社区没人做过的事：**对 dsh 生态做量化供应链健康扫描**。
+
+- **41 包样本**：21 个 `latest` ≠ `next`（#2763 类）、5 个 latest 版本带死依赖（dsh-base 18 个 404 包名等）、15 个插件的 dsh-tools peer 被坏 latest 命中
+- **全注册表**（916 插件 / 324 可 npm 安装）：100 个声明 dsh-tools 范围，**77 个被坏 latest（0.0.1-rc.1）命中**
+- **What-if**：官方把 latest 移到 0.1.0-rc.7 能修复 69/77（89%）；剩 8 个是精确钉 `0.1.0-rc.6` 的插件（建议放宽为 ^）
+
+**附带收获**：
+- 发现并修复了 dsh-dep-audit 的 semver 边界 bug（裸主版本比较符 `<5` / `>=1.2`），发布 0.1.1
+- 发现 `npm view <大包> --json` 会截断版本列表（react 只返回 8 个版本），用 `npm view <pkg> versions --json` 完整列表二次核验
+- 扫描器已入库 dsh-ecosystem/scripts + 每周自动快照 workflow
+
+**方法学价值**：一个“工具”如果不能量化它所在的生态，就只解决单个问题；把工具用在生态本身，才能产出维护者看得懂的修复 ROI（1 个 dist-tag 变更 = 89% 影响面消除）。
