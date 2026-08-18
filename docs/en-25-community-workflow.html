@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh community contribution workflow · dsh tutorials · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>dsh community contribution workflow: from bug reports to evidence-grade replies</h1>
+<blockquote><p>For anyone who wants to consistently publish high-quality contributions in the official dsh Discussions. Everything below comes from the 2026-08-18~19 campaign (7 evidence-grade replies + 1 triage script + 2 fix-day tools); commands tested on Windows / Node 24 / gh CLI.</p></blockquote>
+<h2>1. Triage first: who is unanswered?</h2>
+<p>The official discussion board gets dozens of posts a day. Run the triage script instead of eyeballing:</p>
+<pre><code>node dsh-ecosystem/scripts/discussion-triage.mjs --since 24</code></pre>
+<p>It fetches the newest 100 posts with comment authors in ONE GraphQL request and prints <code># / comments / ours(✅) / title</code>, then lists <strong>0-comment candidates</strong> at the end. Notes:</p>
+<ul><li><code>--since 24</code> (hours), <code>--all</code> (no window), <code>--json</code> (machine-readable)</li><li>&quot;ours&quot; is decided by the current gh login (<code>gh api user --jq .login</code>); already-answered posts are flagged automatically</li><li>Discipline: reply to each thread at most once; when the OP already has a full root cause, reply with <strong>verification + increment only</strong></li></ul>
+<h2>2. Verify before you reply: diff against current main</h2>
+<p>For any post that cites source locations, verify first — three steps:</p>
+<pre><code># 1) Shallow-clone the official repo (once)
+git clone --depth 1 https://github.com/deepseek-ai/deepseek-harness.git
+
+# 2) Record HEAD and state the verification baseline in your reply
+git log -1 --format=&quot;%H %s&quot;
+
+# 3) Locate with rg, confirm line by line
+rg -n &quot;listArtifacts|spillAll|SIGINT&quot; packages/session/session-persistence-jsonl/src packages/subprocess/subprocess-local/src apps/cli/src</code></pre>
+<p>Real campaign results:</p>
+<table><thead><tr><th>Thread</th><th>Verification</th></tr></thead><tr><td>#675 SQLite torn-tail</td><td>OP's cited lines hold line-by-line on current main → added tornFrom's single consumer + regression-test suggestion</td></tr><tr><td>#1047 session.list 500</td><td>Holds and unfixed rc.6→rc.7 → added two more unisolated throw sites in the same loop</td></tr><tr><td>#3190 spill ENOENT</td><td>Holds → pointed out the existing spillDisabled+discardSpill degrade pattern and gave a minimal patch</td></tr><tr><td>#3195 CTRL_C_EVENT</td><td>Holds and unfixed → added SIGBREAK same-channel risk + the Node-layer CREATE_NEW_PROCESS_GROUP constraint</td></tr></table>
+<p>&quot;Verified, still unfixed&quot; is the most useful signal to maintainers: it says the report is credible and worth prioritizing, with an exact baseline.</p>
+<h2>3. Empirics: run the assertion locally when you can</h2>
+<p>Beyond source citations, reproduce what can be reproduced. Example: the CJK retrieval thread (#3206) claimed unicode61 is useless for Chinese and trigram hits; verified with Node 24's built-in node:sqlite:</p>
+<pre><code>import { DatabaseSync } from 'node:sqlite'
+const db = new DatabaseSync(':memory:')
+db.exec(&quot;CREATE VIRTUAL TABLE t USING fts5(content, tokenize='unicode61')&quot;)
+db.exec(&quot;CREATE VIRTUAL TABLE t2 USING fts5(content, tokenize='trigram')&quot;)
+db.prepare('INSERT INTO t(content) VALUES (?)').run('索引优化减少Token消耗的句子')
+db.prepare('INSERT INTO t2(content) VALUES (?)').run('索引优化减少Token消耗的句子')
+console.log(db.prepare('SELECT count(*) c FROM t WHERE t MATCH ?').get('Token消耗').c)  // 0
+console.log(db.prepare('SELECT count(*) c FROM t2 WHERE t2 MATCH ?').get('Token消耗').c) // 1</code></pre>
+<p>That also pinned an edge the OP's table did not show: <strong>2-char CJK queries (e.g. &quot;句子&quot;) return 0 on both lexical arms</strong> (trigram needs &gt;= 3 chars). A comment with measured data beats pure reasoning by an order of magnitude.</p>
+<h2>4. Reply via GraphQL, not REST</h2>
+<p>Creating discussion comments over REST 404s for ordinary tokens (GET works, POST does not). Use GraphQL:</p>
+<pre><code># get the discussion node id
+gh api repos/deepseek-ai/deepseek-harness/discussions/3174 --jq .node_id</code></pre>
+<pre><code>{
+  &quot;query&quot;: &quot;mutation AddComment($discussionId: ID!, $body: String!) { addDiscussionComment(input: {discussionId: $discussionId, body: $body}) { comment { id url } } }&quot;,
+  &quot;variables&quot;: { &quot;discussionId&quot;: &quot;D_kwD...&quot;, &quot;body&quot;: &quot;Markdown body&quot; }
+}</code></pre>
+<pre><code># submit via `gh api graphql --input -` so shell escaping cannot mangle the body</code></pre>
+<h2>5. Family-ize: merge same-root reports and help maintainers prioritize</h2>
+<p>Two real families from the campaign:</p>
+<ul><li><strong>#3190 (spill-dir ENOENT crash) + #3203 (windows-acl sandbox temp dir cleaned)</strong> = &quot;external OS temp cleanup breaks a running dsh&quot;. Same root: long-lived per-process private %TEMP% dirs have no protection against external cleanup. Unified fix: recreate/degrade at the boundary where the dir is consumed.</li><li><strong>#675 (one bad row cascades into deleting valid rows) + #1047 (one bad file wipes the whole list)</strong> = &quot;bad-artifact isolation&quot;. Recommended a shared regression-test convention: corrupt one artifact, assert the rest still work.</li></ul>
+<p>Linking sibling threads explicitly in replies (&quot;#1047 and #675 are the same family&quot;) gives maintainers the full picture in one pass.</p>
+<h2>6. Anti-spam discipline</h2>
+<ul><li>Prefer 0-comment threads; do not repeat threads that already have solid replies</li><li>When the OP ships a full fix proposal, reply as &quot;verification + increment&quot;, not a rewrite</li><li>Every reply contains only evidenced claims; mark speculation explicitly as unverified</li><li>Reply in the thread's language; include line numbers / HEAD / test output so claims are re-checkable</li></ul>
+<h2>7. Tooling inventory</h2>
+<table><thead><tr><th>Tool</th><th>Where</th><th>Purpose</th></tr></thead><tr><td>discussion-triage.mjs</td><td>dsh-ecosystem/scripts</td><td>nightly reply queue (one request, flags ours)</td></tr><tr><td>verify-2763-fix.mjs</td><td>dsh-ecosystem/scripts</td><td>auto re-scan + re-score + report on the #2763 fix day</td></tr><tr><td>full-registry-scan.mjs</td><td>dsh-ecosystem/scripts</td><td>full-registry supply-chain scan (325 plugins)</td></tr><tr><td>restore-publish.ps1</td><td>local work/</td><td>re-trigger the listing gate after repos age in (step 7/8)</td></tr></table>
+<blockquote><p>The official awesome-dsh-plugin Submission gate re-runs &quot;aged in&quot; PRs automatically (regate.yml every 6h), so gates turn green even without manual action; an active re-trigger just makes it green at the earliest moment.</p></blockquote>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>

@@ -58,6 +58,8 @@
 | [zh-23-doctor-action.md](./zh-23-doctor-action.md) | dsh-plugin-doctor-action：把发布前体检装进 CI |
 | [zh-24-pipeline.md](./zh-24-pipeline.md) | 插件开发流水线：8 个插件一天上线的实战复盘（骨架/质量基线/踩坑/社区闭环） |
 | [en-23-doctor-action.md](./en-23-doctor-action.md) | dsh-plugin-doctor-action: pre-publish checks in CI |
+| [zh-25-community-workflow.md](./zh-25-community-workflow.md) | 社区贡献工作流：从 bug 报告到证据级回复（值班/核验/GraphQL/家族化） |
+| [en-25-community-workflow.md](./en-25-community-workflow.md) | Community contribution workflow: evidence-grade replies (triage/verify/GraphQL/family-ize) |
 | [en-24-pipeline.md](./en-24-pipeline.md) | The plugin pipeline: 8 verified plugins in one day (skeleton/quality gate/pitfalls/community loop) |
 
 ## 配套资源

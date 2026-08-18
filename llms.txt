@@ -1,6 +1,6 @@
 # dsh-tutorials
 
-> Bilingual (中文 + English) tutorials for DeepSeek Harness: 22 posts covering getting started, architecture, plugin development, pre-publish checks with dsh-plugin-doctor, awesome-list review checklists, prerelease peer/ERESOLVE troubleshooting, plugin search, marketplace publishing, and the undefined.prepare crash family.
+> Bilingual (中文 + English) tutorials for DeepSeek Harness: 25 posts covering getting started, architecture, plugin development, pre-publish checks with dsh-plugin-doctor, awesome-list review checklists, prerelease peer/ERESOLVE troubleshooting, plugin search, marketplace publishing, and the undefined.prepare crash family.
 
 ## Key facts
 
@@ -15,3 +15,4 @@
 - zh-06/en-06: health-check with dsh-plugin-doctor
 - zh-08/en-08: prerelease peers and ERESOLVE
 - zh-11/en-11: debugging the undefined.prepare crash family
+- zh-25/en-25: community contribution workflow (triage/verify/GraphQL/family-ize)
