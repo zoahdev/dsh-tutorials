@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Plugin Pipeline: 8 Plugins in One Day · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>The DeepSeek Harness Plugin Pipeline: 8 verified plugins in one day</h1>
+<blockquote><p>by zoahdev · 2026-08-18 · every plugin is live on npm/GitHub with green CI</p></blockquote>
+<h2>TL;DR</h2>
+<blockquote><p>A dsh plugin = one <code>defineTool</code> + one <code>cordis.patch.yml</code> + tests/CI + a bilingual README. Once the quality gate is a repeatable pipeline, going from idea to published plugin takes tens of minutes.</p></blockquote>
+<h2>The minimal skeleton</h2>
+<pre><code>my-plugin/
+├── package.json          # name/version/description + dsh.bundle.patch
+├── cordis.patch.yml      # - insert: - id: xxx  name: my-plugin
+├── src/index.ts          # apply(ctx, config) → ctx.tools.register(defineTool({...}))
+├── src/version.ts        # zero-dep peer guard (pnpm can silently link an old RC)
+├── tests/*.spec.ts       # vitest, incl. mock-registry / mock-exec end-to-end cases
+├── scripts/integration-test.mjs  # pack → fresh install → call the real handler → assert render
+├── scripts/dsh-smoke.sh  # fresh profile → plugin add → dump-config → dsh web HTTP 200
+└── .github/workflows/ci.yml</code></pre>
+<p>Gotchas learned from dsh-tools' typings:</p>
+<ul><li><code>defineTool</code> needs <code>parameters</code>, <code>output.schema</code> (do NOT put <code>required</code> in an output object — the value schema DSL rejects it), a pure <code>render</code>, and <code>execute</code> returning canonical JSON while honoring <code>exec.signal</code>.</li><li>Return types that flow into <code>JsonValue</code> must be <code>type</code> aliases, not <code>interface</code>s (index-signature mismatch).</li><li>Peer guard: at apply() time, resolve the linked <code>@deepseek-ai/dsh-tools</code> version and throw on mismatch — turn a silent pnpm link error into a loud, actionable one.</li></ul>
+<h2>The quality gate (every plugin runs this)</h2>
+<pre><code>pnpm install &amp;&amp; pnpm typecheck &amp;&amp; pnpm build &amp;&amp; pnpm test
+pnpm pack
+node scripts/integration-test.mjs ./x-0.1.0.tgz   # real tarball → real handler → real render
+bash scripts/dsh-smoke.sh ./x-0.1.0.tgz           # fresh DSH_HOME profile → dsh web boots</code></pre>
+<p>CI = 3 jobs: dsh-plugin-doctor preflight (Ubuntu), test-and-load (Ubuntu), and the Windows fresh-profile <code>dsh web</code> boot smoke (the upstream npm CLI lacks the linux-x64 pty prebuild, so boot smoke runs on Windows).</p>
+<h2>The 8 plugins: each fills a verified registry gap</h2>
+<table><thead><tr><th>Plugin</th><th>Gap filled</th></tr></thead><tr><td>dsh-dep-audit</td><td>dependency supply-chain hygiene (peer resolvability, dist-tag contradiction, staleness, licenses, drift) — live run flags dsh-tools' broken <code>latest=0.0.1-rc.1</code> (#2763 class)</td></tr><tr><td>dsh-llms-forge</td><td>llms.txt generator (zero hits in the registry)</td></tr><tr><td>dsh-cn-boot</td><td>China-network bootstrap: probes + mirror/proxy recommendations (zero hits; caught a real HuggingFace timeout locally)</td></tr><tr><td>dsh-timesheet</td><td>wall-clock time tracking from session logs (zero hits; token dashboards were everywhere, time tracking nowhere)</td></tr><tr><td>dsh-discussions-radar</td><td>official Discussions radar (the repo is Discussions-only, but nothing surfaced them to agents)</td></tr><tr><td>dsh-readme-forge</td><td>README generator (zero hits; pairs with llms-forge)</td></tr><tr><td>dsh-firstrun</td><td>first-run health check (toolchain/profile/API key/workspace/registry + next steps)</td></tr><tr><td>dsh-disk-audit</td><td>disk-usage audit (session logs grow to hundreds of MB)</td></tr></table>
+<p>Method: scan the 916-plugin registry first, skip anything already taken (e.g. dsh-vault is at v1.8.1 with 393 tests — don't compete).</p>
+<h2>Real pitfalls (all hit, all fixed)</h2>
+<p>1. <strong>npm name collision</strong>: <code>dsh-quickstart</code> was taken → full rename to <code>dsh-firstrun</code> (package, repo, docs, CI, scripts — miss one and CI breaks).</p>
+<p>2. <strong>Windows shims</strong>: <code>spawnSync('pnpm', args)</code> can't launch pnpm on Windows (it's a .cmd shim) → on win32 build a command string with a shell and a quote helper.</p>
+<p>3. <strong>CI grep drift</strong>: after the rename, the smoke grep still used the old id → red CI → fix and rerun green.</p>
+<p>4. <strong>0xsline CATALOG.md is CI-generated</strong>: maintainer feedback — hand edits get overwritten; the correct place is README.md + README.zh-CN.md.</p>
+<p>5. <strong>dsh-tools <code>latest</code> dist-tag is broken</strong> (0.0.1-rc.1 vs declared ^0.1.0-rc.6) — the ecosystem-wide ERESOLVE root cause (#2763); develop against <code>@next</code>/rc.6.</p>
+<h2>The community loop (publish ≠ done)</h2>
+<p>1. One Show Your Plugins thread that evolves (#3123) — append updates, don't spam new threads.</p>
+<p>2. Answer Q&amp;A with evidence: #55 (cordis-plugin-timer missing on global install) — verified npm metadata + local <code>require.resolve</code> before replying.</p>
+<p>3. Listing PRs: 0xsline (README edits, not the generated CATALOG) + awesome-dsh-plugin (data/plugins yml + generated README, 1-day gate).</p>
+<p>4. Keep your own registry/ecosystem in sync: dsh-subscribe (916 plugins / 29 verified) + dsh-ecosystem.</p>
+<h2>Advice for new plugin authors</h2>
+<ul><li>Scan for gaps first (registry + official Discussions Ideas).</li><li>Prefer zero runtime dependencies (node: builtins only).</li><li>Read-only by default; any write is an explicit opt-in — that is the trust baseline of this community.</li><li>Never print secret values; show variable names only.</li><li>Bilingual README + llms.txt = discoverability.</li></ul>
+<h2>Links</h2>
+<ul><li>Repos: github.com/zoahdev/dsh-dep-audit · dsh-llms-forge · dsh-cn-boot · dsh-timesheet · dsh-discussions-radar · dsh-readme-forge · dsh-firstrun · dsh-disk-audit</li><li>Official thread: https://github.com/deepseek-ai/deepseek-harness/discussions/3123</li><li>Ecosystem map: https://github.com/zoahdev/dsh-ecosystem</li></ul>
+<h2>Bonus: ecosystem supply-chain health scan (a natural extension)</h2>
+<p>After shipping the 8 plugins, I used the dsh-dep-audit engine to do something nobody had done: quantify the ecosystem's supply-chain health.</p>
+<ul><li><strong>41-package sample</strong>: 21 with <code>latest</code> != <code>next</code> (#2763 class), 5 with dead ranges in the latest version (dsh-base has 18 pre-rename 404 package names), 15 plugins whose dsh-tools peer is contradicted by the broken latest</li><li><strong>Full registry</strong> (916 plugins / 324 npm-installable): 100 declare a dsh-tools range, <strong>77 are hit by the broken latest (0.0.1-rc.1)</strong></li><li><strong>What-if</strong>: moving official latest to 0.1.0-rc.7 fixes 69/77 (89%); the remaining 8 pin exact <code>0.1.0-rc.6</code> (authors should loosen to <code>^</code>)</li></ul>
+<p><strong>Bonus findings</strong>:</p>
+<ul><li>Found + fixed a semver edge bug in dsh-dep-audit (bare-major comparator bounds like <code>&lt;5</code> / <code>&gt;=1.2</code>), released 0.1.1</li><li><code>npm view &lt;huge-package&gt; --json</code> truncates the version list (react returned only 8 versions) — verify with <code>npm view &lt;pkg&gt; versions --json</code></li><li>Scanner is now in dsh-ecosystem/scripts with a weekly auto-snapshot workflow</li></ul>
+<p><strong>Method lesson</strong>: a tool that doesn't measure its own ecosystem only fixes individual problems; applying the tool to the ecosystem produces maintenance ROI the maintainers can act on (1 dist-tag change = 89% of the impact gone).</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>

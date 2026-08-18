@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>插件开发流水线：8 个插件一天上线 · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>DeepSeek Harness 插件开发流水线：8 个插件一天上线的实战复盘</h1>
+<blockquote><p>作者：zoahdev · 2026-08-18 · 全部插件均已在 npm/GitHub 上线并通过 CI</p></blockquote>
+<h2>为什么写这篇</h2>
+<p>DeepSeek Harness（dsh）开源后生态爆发，<code>dsh-plugin</code> 话题下已有数千仓库，但<strong>高质量的验证过的插件</strong>仍然稀缺。这一天我用同一条流水线连发 8 个插件（全部测试 + CI + 真实安装验证 + 收录 PR），把这条流水线和踩过的坑完整记录下来。</p>
+<h2>一句话结论</h2>
+<blockquote><p>一个 dsh 插件 = 一个 <code>defineTool</code> 工具 + 一个 <code>cordis.patch.yml</code> + 一套测试/CI + 一份双语 README。质量门槛跑通后，从想法到上线只需要几十分钟。</p></blockquote>
+<h2>插件结构（最小骨架）</h2>
+<pre><code>my-plugin/
+├── package.json          # name/version/description + dsh.bundle.patch
+├── cordis.patch.yml      # - insert: - id: xxx  name: my-plugin
+├── src/index.ts          # apply(ctx, config) → ctx.tools.register(defineTool({...}))
+├── src/version.ts        # 零依赖 peer 守卫（防 pnpm 链错旧 RC）
+├── tests/*.spec.ts       # vitest 单测
+├── scripts/integration-test.mjs  # 打包后真实安装 + 调用 handler
+├── scripts/dsh-smoke.sh  # 全新 profile 安装 + dsh web 启动冒烟
+└── .github/workflows/ci.yml</code></pre>
+<p>关键点：</p>
+<ul><li><strong>工具定义</strong>：<code>defineTool</code> 需要 <code>parameters</code>（schema DSL）、<code>output.schema</code>（注意：<code>required</code> 不在 value schema DSL 支持范围内，输出对象不要写 <code>required</code>）、<code>render</code>（纯函数把结果渲染成 ContentBlock）、<code>execute</code>（返回 canonical JSON，<code>exec.signal</code> 处理取消）。</li><li><strong>类型别名</strong>：返回给模型的对象类型要用 <code>type</code> 别名而不是 <code>interface</code>，否则 <code>JsonValue</code> 索引签名不匹配（TS 报错）。</li><li><strong>Peer 守卫</strong>：pnpm 可能静默链入旧 RC，运行时用 <code>satisfiesCaret</code> 检查 <code>@deepseek-ai/dsh-tools</code> 版本，不匹配直接 throw——把静默失败变响亮失败。</li></ul>
+<h2>质量基线（每条线都跑）</h2>
+<pre><code>pnpm install
+pnpm typecheck     # tsc --noEmit
+pnpm build         # tsc → lib/
+pnpm test          # vitest（含 mock registry / mock exec 的端到端单测）
+pnpm pack
+node scripts/integration-test.mjs ./xxx-0.1.0.tgz   # 真实安装 tarball → 加载 → 调用真实 handler → render 断言
+bash scripts/dsh-smoke.sh ./xxx-0.1.0.tgz           # 全新 DSH_HOME profile → plugin add → dump-config → dsh web 启动 HTTP 200</code></pre>
+<p>CI 三件套（每个仓库都配了）：</p>
+<p>1. <code>dsh-plugin-doctor-action</code> 预检（发布前健康检查）</p>
+<p>2. Ubuntu：typecheck → build → test → pack → 打包集成（真实调用工具）</p>
+<p>3. Windows：全新 profile 安装 + <code>dsh web</code> 启动冒烟（因为官方 npm CLI 缺 linux-x64 pty 预编译，启动冒烟只能在 Windows 跑）</p>
+<h2>8 个插件：每个解决一个真实空位</h2>
+<table><thead><tr><th>插件</th><th>解决什么</th><th>为什么是空位</th></tr></thead><tr><td>dsh-dep-audit</td><td>依赖供应链卫生审计（peer 可解析、dist-tag 矛盾、过期、许可证、漂移）</td><td>注册表安全类只有 poison-guard 一个；实测抓到 <code>@deepseek-ai/dsh-tools</code> 的 <code>latest=0.0.1-rc.1</code> 与声明范围矛盾（#2763 类）</td></tr><tr><td>dsh-llms-forge</td><td>从 package.json + README 生成 llms.txt</td><td>llms.txt 方向零命中；AI agent 进仓库最先找它</td></tr><tr><td>dsh-cn-boot</td><td>国内网络引导（探测 npm/GitHub/HF/代理 + 镜像推荐）</td><td>零命中；本机实跑准确抓到 HuggingFace 超时</td></tr><tr><td>dsh-timesheet</td><td>从会话日志做基于 turn 的时间跟踪</td><td>时间统计零命中（token 仪表盘满地，没人统计墙钟时间）；实跑 52 turns / 4h56m</td></tr><tr><td>dsh-discussions-radar</td><td>官方 Discussions 雷达</td><td>官方只用 Discussions，但没插件把它暴露给 agent</td></tr><tr><td>dsh-readme-forge</td><td>生成 README.md（package.json + cordis.patch.yml + 源码布局）</td><td>README 生成零命中；与 llms-forge 组成管道</td></tr><tr><td>dsh-firstrun</td><td>首次运行体检（工具链/profile/API Key/工作区/注册表 + 下一步）</td><td>onboarding/quickstart 零命中</td></tr><tr><td>dsh-disk-audit</td><td>磁盘占用审计（会话日志能涨到数百 MB）</td><td>存储审计零命中</td></tr></table>
+<p><strong>方法论</strong>：每次动手前先扫 dsh-subscribe 注册表（916 插件）确认空位，避免撞车。比如 vault 方向看到 dsh-vault 已迭代到 v1.8.1（393 测试）就果断放弃。</p>
+<h2>踩坑记录（都是真金）</h2>
+<p>1. <strong>npm 撞名</strong>：<code>dsh-quickstart</code> 已被占用（0.2.0）→ 全套改名 <code>dsh-firstrun</code>（包名/仓库/文档/CI/脚本一起改，否则 CI 会挂）。</p>
+<p>2. <strong>Windows shim</strong>：<code>spawnSync('pnpm', args)</code> 在 Windows 上找不到 pnpm（它是 .cmd shim）→ win32 走命令串 + shell:true + 引号助手。</p>
+<p>3. <strong>CI 漏改</strong>：改名时 grep 模式没同步，Windows 冒烟红了一次 → grep 改为新 id 后重跑全绿。</p>
+<p>4. <strong>0xsline 收录方式</strong>：维护者反馈 CATALOG.md 是 CI 自动生成、手改会被覆盖 → 正确入口是 README.md + README.zh-CN.md 双文件。</p>
+<p>5. <strong>dsh-tools 的 latest dist-tag 是坏的</strong>（0.0.1-rc.1 vs 声明 ^0.1.0-rc.6）——这是生态级 ERESOLVE 的根因之一（#2763），插件开发时要用 <code>@next</code>/rc.6。</p>
+<h2>社区贡献闭环</h2>
+<p>发布 ≠ 结束。完整闭环：</p>
+<p>1. <strong>官方 Show Your Plugins</strong>：一个帖子把家族串起来（#3123），每次更新追加评论而不是刷新帖。</p>
+<p>2. <strong>Q&amp;A 用证据回复</strong>：#55（dsh 全局安装找不到 cordis-plugin-timer）——先核实 npm 元数据 + 本地 require.resolve 实验，再给出有证据的排查回复（原回帖者只说“已解决”没说方案）。</p>
+<p>3. <strong>收录 PR</strong>：0xsline（README 双文件）+ awesome-dsh-plugin（data/plugins yml + 自动生成 README），1 天 gate 后转绿。</p>
+<p>4. <strong>自己的注册表/生态目录</strong>：dsh-subscribe（916 插件 / verified 29）+ dsh-ecosystem 同步 ✅。</p>
+<h2>给新插件作者的建议</h2>
+<ul><li><strong>先扫空位再动手</strong>：注册表 + 官方 Discussions 的 Ideas 分类。</li><li><strong>零依赖优先</strong>：能用 node: 内置就用内置（fetch/spawnSync/fs），发布即装即用。</li><li><strong>默认只读</strong>：写盘/改配置一律显式 opt-in，这是 dsh 社区最看重的信任基线。</li><li><strong>绝不在输出里打印密钥值</strong>：只显示变量名。</li><li><strong>双语 README + llms.txt</strong>：AI 可读性就是被发现率。</li></ul>
+<h2>链接</h2>
+<ul><li>8 个插件仓库：github.com/zoahdev/dsh-dep-audit · dsh-llms-forge · dsh-cn-boot · dsh-timesheet · dsh-discussions-radar · dsh-readme-forge · dsh-firstrun · dsh-disk-audit</li><li>官方展示帖：https://github.com/deepseek-ai/deepseek-harness/discussions/3123</li><li>生态地图：https://github.com/zoahdev/dsh-ecosystem</li></ul>
+<h2>番外：生态供应链健康扫描（8 插件方法论的自然延伸）</h2>
+<p>发布 8 个插件后，我用 dsh-dep-audit 的引擎做了一件社区没人做过的事：<strong>对 dsh 生态做量化供应链健康扫描</strong>。</p>
+<ul><li><strong>41 包样本</strong>：21 个 <code>latest</code> ≠ <code>next</code>（#2763 类）、5 个 latest 版本带死依赖（dsh-base 18 个 404 包名等）、15 个插件的 dsh-tools peer 被坏 latest 命中</li><li><strong>全注册表</strong>（916 插件 / 324 可 npm 安装）：100 个声明 dsh-tools 范围，<strong>77 个被坏 latest（0.0.1-rc.1）命中</strong></li><li><strong>What-if</strong>：官方把 latest 移到 0.1.0-rc.7 能修复 69/77（89%）；剩 8 个是精确钉 <code>0.1.0-rc.6</code> 的插件（建议放宽为 ^）</li></ul>
+<p><strong>附带收获</strong>：</p>
+<ul><li>发现并修复了 dsh-dep-audit 的 semver 边界 bug（裸主版本比较符 <code>&lt;5</code> / <code>&gt;=1.2</code>），发布 0.1.1</li><li>发现 <code>npm view &lt;大包&gt; --json</code> 会截断版本列表（react 只返回 8 个版本），用 <code>npm view &lt;pkg&gt; versions --json</code> 完整列表二次核验</li><li>扫描器已入库 dsh-ecosystem/scripts + 每周自动快照 workflow</li></ul>
+<p><strong>方法学价值</strong>：一个“工具”如果不能量化它所在的生态，就只解决单个问题；把工具用在生态本身，才能产出维护者看得懂的修复 ROI（1 个 dist-tag 变更 = 89% 影响面消除）。</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>
