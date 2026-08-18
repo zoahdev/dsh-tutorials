@@ -17,6 +17,7 @@ It fetches the newest 100 posts with comment authors in ONE GraphQL request and 
 - Discipline: reply to each thread at most once; when the OP already has a full root cause, reply with **verification + increment only**
 
 ## 2. Verify before you reply: diff against current main
+The last step can be automated: `node dsh-ecosystem/scripts/verify-citation.mjs <repo> <file:line> [--sha <HEAD>]` — validates the line exists, prints it, and compares HEAD, so you never cite a line you have not read.
 
 For any post that cites source locations, verify first — three steps:
 

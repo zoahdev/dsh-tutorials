@@ -38,6 +38,7 @@
 <p>It fetches the newest 100 posts with comment authors in ONE GraphQL request and prints <code># / comments / ours(✅) / title</code>, then lists <strong>0-comment candidates</strong> at the end. Notes:</p>
 <ul><li><code>--since 24</code> (hours), <code>--all</code> (no window), <code>--json</code> (machine-readable)</li><li>&quot;ours&quot; is decided by the current gh login (<code>gh api user --jq .login</code>); already-answered posts are flagged automatically</li><li>Discipline: reply to each thread at most once; when the OP already has a full root cause, reply with <strong>verification + increment only</strong></li></ul>
 <h2>2. Verify before you reply: diff against current main</h2>
+<p>The last step can be automated: <code>node dsh-ecosystem/scripts/verify-citation.mjs &lt;repo&gt; &lt;file:line&gt; [--sha &lt;HEAD&gt;]</code> — validates the line exists, prints it, and compares HEAD, so you never cite a line you have not read.</p>
 <p>For any post that cites source locations, verify first — three steps:</p>
 <pre><code># 1) Shallow-clone the official repo (once)
 git clone --depth 1 https://github.com/deepseek-ai/deepseek-harness.git

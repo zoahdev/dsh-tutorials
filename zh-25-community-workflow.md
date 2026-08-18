@@ -17,6 +17,7 @@ node dsh-ecosystem/scripts/discussion-triage.mjs --since 24
 - 值班纪律：同一帖**只答一次**；帖主已自带完整根因时，只做**核验 + 增量**，不重复
 
 ## 2. 核验：回复前先对照当前 main
+最后一步可以用引用校验器自动化：`node dsh-ecosystem/scripts/verify-citation.mjs <repo> <file:line> [--sha <HEAD>]`——校验行号存在、打印该行、并对比 HEAD，防止引用了没读过的行。
 
 对任何带"源码定位"的帖子，先核验再说话，三步：
 

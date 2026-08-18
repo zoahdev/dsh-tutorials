@@ -38,6 +38,7 @@
 <p>单次 GraphQL 拉最新 100 帖 + 评论作者，输出四列：# / comments / 我方已答(✅) / title，末尾列出 <strong>0 回复候选</strong>。要点：</p>
 <ul><li><code>--since 24</code>（小时）、<code>--all</code>（不过滤）、<code>--json</code>（机器可读）</li><li>&quot;ours&quot; 按当前 gh 登录名判定（<code>gh api user --jq .login</code>），答过自动跳过</li><li>值班纪律：同一帖<strong>只答一次</strong>；帖主已自带完整根因时，只做<strong>核验 + 增量</strong>，不重复</li></ul>
 <h2>2. 核验：回复前先对照当前 main</h2>
+<p>最后一步可以用引用校验器自动化：<code>node dsh-ecosystem/scripts/verify-citation.mjs &lt;repo&gt; &lt;file:line&gt; [--sha &lt;HEAD&gt;]</code>——校验行号存在、打印该行、并对比 HEAD，防止引用了没读过的行。</p>
 <p>对任何带&quot;源码定位&quot;的帖子，先核验再说话，三步：</p>
 <pre><code># 1) 浅克隆官方仓库（一次）
 git clone --depth 1 https://github.com/deepseek-ai/deepseek-harness.git
