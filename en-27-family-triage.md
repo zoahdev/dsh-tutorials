@@ -14,7 +14,7 @@ Family-izing groups threads by root cause: a new post is checked against the map
 
 ## 2. What the family map is
 
-[The known bug family map](https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md) (docs/bug-families.md in dsh-ecosystem) currently tracks 10 verified families. Each entry carries:
+[The known bug family map](https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md) (docs/bug-families.md in dsh-ecosystem) currently tracks 12 verified families. Each entry carries:
 
 | Field | Meaning |
 |---|---|
@@ -24,7 +24,7 @@ Family-izing groups threads by root cause: a new post is checked against the map
 | Fix suggestion | Minimal patch + regression-test convention |
 | Status | Whether upstream has fixed it |
 
-The 10 families at a glance:
+The 12 families at a glance:
 
 1. **npm dist-tag publishing** (#2763: latest stuck at 0.0.1-rc.1; 160/325 registry plugins affected)
 2. **%TEMP% cleanup** (#1961/#3190/#3203: runtime-private dirs deleted → crash or fail-closed)
@@ -36,6 +36,8 @@ The 10 families at a glance:
 8. **Plugin load/rollback** (#3173/#3213)
 9. **Search/rendering/metadata** (#3202/#3206/#3177/#3111)
 10. **Tool-result observability** (#3182: ok field unreliable; archive ≠ delete)
+11. **Out-of-tree session-event envelope** (#3191/#1538/#1584/#1619/#2778: ignorable write-side gap; read side ready; implementation verified)
+12. **Same-mode sandbox escalation false errors** (#3219: full-access requests full-access and gets "not strictly wider"; fix branch ready)
 
 ## 3. When you hit a family
 

@@ -37,9 +37,9 @@
 <ul><li>维护者要跨帖拼图才知道问题的真实影响面；</li><li>每个新帖都从零解释一遍，浪费所有人的时间；</li><li>修复时只修了&quot;这一帖&quot;，没堵住&quot;这一类&quot;。</li></ul>
 <p>家族化就是把散帖按根因归并：新帖先对照家族，命中就引用根因帖 + 补增量证据，而不是重新开一个平行宇宙。</p>
 <h2>2. 家族图谱是什么</h2>
-<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">dsh-ecosystem/docs/bug-families.md</a>（已知问题家族图谱）目前收录 10 个已核验家族，每个家族包含：</p>
+<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">dsh-ecosystem/docs/bug-families.md</a>（已知问题家族图谱）目前收录 12 个已核验家族，每个家族包含：</p>
 <table><thead><tr><th>字段</th><th>含义</th></tr></thead><tr><td>触发模型</td><td>什么情况下会中招</td></tr><tr><td>代表帖</td><td>该家族的 canonical 帖子编号</td></tr><tr><td>已验证根因</td><td>官方源码 file:line，直接可查</td></tr><tr><td>修复建议</td><td>最小补丁 + 回归测试惯例</td></tr><tr><td>状态</td><td>官方是否已修</td></tr></table>
-<p>10 个家族一览：</p>
+<p>12 个家族一览：</p>
 <p>1. <strong>npm dist-tag 发布族</strong>（#2763：latest 卡 0.0.1-rc.1，160/325 插件被命中）</p>
 <p>2. <strong>%TEMP% 清理族</strong>（#1961/#3190/#3203：运行期私有目录被删 → 崩溃或 fail-closed）</p>
 <p>3. <strong>坏工件隔离族</strong>（#675/#1047/#3173：一个坏文件拖垮列表/启动）</p>
@@ -50,6 +50,8 @@
 <p>8. <strong>插件加载/回滚族</strong>（#3173/#3213）</p>
 <p>9. <strong>检索/渲染/元数据族</strong>（#3202/#3206/#3177/#3111）</p>
 <p>10. <strong>工具结果可信度族</strong>（#3182：ok 字段不可信、归档≠删除）</p>
+<p>11. <strong>out-of-tree 会话事件信封族</strong>（#3191/#1538/#1584/#1619/#2778：ignorable 写侧缺口，读侧已就绪，实现已验证）</p>
+<p>12. <strong>sandbox 同模式升级误报族</strong>（#3219：full-access 请求 full-access 报 not strictly wider，补丁分支就绪）</p>
 <h2>3. 命中家族后怎么做</h2>
 <p>1. <strong>引用根因帖编号</strong>，别重复贴分析——&quot;这与 #2660 同根因（双实例 symbol 分裂）&quot;；</p>
 <p>2. <strong>补增量证据</strong>：新环境（macOS/WSL/Windows 10 vs 11）、新触发路径、新字段名、新测量数据；</p>

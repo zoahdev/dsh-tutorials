@@ -14,7 +14,7 @@ dsh 讨论区里，**同一个根因往往散在多帖**：用户环境不同、
 
 ## 2. 家族图谱是什么
 
-[dsh-ecosystem/docs/bug-families.md](https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md)（已知问题家族图谱）目前收录 10 个已核验家族，每个家族包含：
+[dsh-ecosystem/docs/bug-families.md](https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md)（已知问题家族图谱）目前收录 12 个已核验家族，每个家族包含：
 
 | 字段 | 含义 |
 |---|---|
@@ -24,7 +24,7 @@ dsh 讨论区里，**同一个根因往往散在多帖**：用户环境不同、
 | 修复建议 | 最小补丁 + 回归测试惯例 |
 | 状态 | 官方是否已修 |
 
-10 个家族一览：
+12 个家族一览：
 
 1. **npm dist-tag 发布族**（#2763：latest 卡 0.0.1-rc.1，160/325 插件被命中）
 2. **%TEMP% 清理族**（#1961/#3190/#3203：运行期私有目录被删 → 崩溃或 fail-closed）
@@ -36,6 +36,8 @@ dsh 讨论区里，**同一个根因往往散在多帖**：用户环境不同、
 8. **插件加载/回滚族**（#3173/#3213）
 9. **检索/渲染/元数据族**（#3202/#3206/#3177/#3111）
 10. **工具结果可信度族**（#3182：ok 字段不可信、归档≠删除）
+11. **out-of-tree 会话事件信封族**（#3191/#1538/#1584/#1619/#2778：ignorable 写侧缺口，读侧已就绪，实现已验证）
+12. **sandbox 同模式升级误报族**（#3219：full-access 请求 full-access 报 not strictly wider，补丁分支就绪）
 
 ## 3. 命中家族后怎么做
 
