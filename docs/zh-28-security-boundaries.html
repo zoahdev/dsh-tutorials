@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>沙箱信任边界与 fail-closed 原则（Security Boundaries） · dsh tutorials</title>
-<style>  :root { color-scheme: light; }
+<style>
+  :root { color-scheme: light; }
   body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
   header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
@@ -37,13 +38,13 @@
 <h3>发生了什么</h3>
 <p>dsh 的普通执行路径都走文件沙箱：</p>
 <ul><li>bash → <code>bash-sandbox</code> 的 <code>ctx.sandbox.confine(...)</code>（Landlock/bwrap/Seatbelt）；</li><li>文件工具 → <code>fs-sandbox</code> 的围栏（read-only 拒绝一切变更，workspace-write 限工作区内）。</li></ul>
-<p>但 <strong>Code Mode 的 <code>run_code</code></strong> 走第三条路：<code>code-runtime-worker-thread</code> 用 <code>new Worker(path, { env: {}, execArgv: [] })</code> 启动 Node worker，模型代码经 <code>new AsyncFunction(...)</code> 执行——<strong>没有任何文件效应策略</strong>（无 <code>ctx.sandbox.confine</code>、无 <code>--experimental-permission</code>）。worker 与宿主进程同 UID、同内核，模型程序可以 <code>await import(&#x27;node:fs&#x27;)</code> 读写任意文件、<code>await import(&#x27;node:child_process&#x27;)</code> 起任意无约束子进程。</p>
+<p>但 <strong>Code Mode 的 <code>run_code</code></strong> 走第三条路：<code>code-runtime-worker-thread</code> 用 <code>new Worker(path, { env: {}, execArgv: [] })</code> 启动 Node worker，模型代码经 <code>new AsyncFunction(...)</code> 执行——<strong>没有任何文件效应策略</strong>（无 <code>ctx.sandbox.confine</code>、无 <code>--experimental-permission</code>）。worker 与宿主进程同 UID、同内核，模型程序可以 <code>await import('node:fs')</code> 读写任意文件、<code>await import('node:child_process')</code> 起任意无约束子进程。</p>
 <p>默认沙箱是 read-only（<code>sandbox-policy</code> 默认值），所以&quot;Code Mode + 默认沙箱&quot;= 完全逃逸，CVSS 10.0/9.8。</p>
 <h3>教训一：枚举所有执行路径，逐个对照边界</h3>
 <p>检查一个沙箱时，不要只看&quot;有没有沙箱&quot;，要看<strong>每一条能执行代码的路径</strong>是否都经过同一个策略面：</p>
 <table><thead><tr><th>路径</th><th>是否受沙箱约束（rc.7 修复前）</th></tr></thead><tr><td>bash / pwsh</td><td>✅ <code>ctx.sandbox.confine</code></td></tr><tr><td>fs 工具</td><td>✅ 围栏 + 路径规范化</td></tr><tr><td>run_code (worker-thread)</td><td>❌ 无文件效应策略</td></tr><tr><td>workflow worker-thread (node:vm)</td><td>❌ 同类无约束面</td></tr><tr><td>cordis-host-runner 动态插件域</td><td>❌ 文档明示 not containment</td></tr></table>
 <h3>教训二：fail-closed 优于 fail-open</h3>
-<p>在根修（把 worker 纳入 <code>ctx.sandbox.confine</code>）落地前，正确的最小缓解是 <strong>fail-closed</strong>：worker-thread isolation + 受限策略（read-only/workspace-write）→ 拒绝执行，而不是静默放行。已落地分支 <code>fix/run-code-failclosed-sandbox</code>：dispatch 前解析沙箱策略，<code>runtime.isolation === &#x27;worker-thread&#x27; &amp;&amp; policyMode !== &#x27;danger-full-access&#x27;</code> → 抛错（提示三条出路：DSH_TOOLS_MODE=native / danger-full-access / 挂可约束 runtime）。</p>
+<p>在根修（把 worker 纳入 <code>ctx.sandbox.confine</code>）落地前，正确的最小缓解是 <strong>fail-closed</strong>：worker-thread isolation + 受限策略（read-only/workspace-write）→ 拒绝执行，而不是静默放行。已落地分支 <code>fix/run-code-failclosed-sandbox</code>：dispatch 前解析沙箱策略，<code>runtime.isolation === 'worker-thread' &amp;&amp; policyMode !== 'danger-full-access'</code> → 抛错（提示三条出路：DSH_TOOLS_MODE=native / danger-full-access / 挂可约束 runtime）。</p>
 <h2>3. 案例：#3212 允许清单 &gt; 禁止清单</h2>
 <p>dsh-crew 讨论里提炼的原则：<strong>文本安全带是 policy，不是安全边界</strong>。让 agent&quot;不要执行危险命令&quot;的提示，和沙箱&quot;不允许执行&quot;是两回事——前者可被绕过（echo/命令行/MCP 都能绕开文本规则），后者是内核强制。</p>
 <p>检查你的部署：如果某个安全保证只存在于 system prompt 或插件描述里，它就不是边界；要把它变成沙箱策略/权限枚举/审批门。</p>

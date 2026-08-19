@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sandbox Trust Boundaries and the Fail-Closed Principle · dsh tutorials</title>
-<style>  :root { color-scheme: light; }
+<style>
+  :root { color-scheme: light; }
   body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
   header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
@@ -37,13 +38,13 @@
 <h3>What happened</h3>
 <p>Every normal dsh execution path honors the file-effect sandbox:</p>
 <ul><li>bash → <code>bash-sandbox</code> calls <code>ctx.sandbox.confine(...)</code> (Landlock/bwrap/Seatbelt);</li><li>filesystem tools → <code>fs-sandbox</code> fence (read-only refuses every mutation; workspace-write confines to the workspace root).</li></ul>
-<p>But <strong>Code Mode&#x27;s <code>run_code</code></strong> takes a third path: <code>code-runtime-worker-thread</code> spawns a Node worker with <code>new Worker(path, { env: {}, execArgv: [] })</code> and the model program runs under <code>new AsyncFunction(...)</code> — <strong>no file-effect policy at all</strong> (no <code>ctx.sandbox.confine</code>, no <code>--experimental-permission</code>). The worker shares the host process UID and kernel, so the program can <code>await import(&#x27;node:fs&#x27;)</code> to read/write any file and <code>await import(&#x27;node:child_process&#x27;)</code> to spawn unconfined subprocesses.</p>
+<p>But <strong>Code Mode's <code>run_code</code></strong> takes a third path: <code>code-runtime-worker-thread</code> spawns a Node worker with <code>new Worker(path, { env: {}, execArgv: [] })</code> and the model program runs under <code>new AsyncFunction(...)</code> — <strong>no file-effect policy at all</strong> (no <code>ctx.sandbox.confine</code>, no <code>--experimental-permission</code>). The worker shares the host process UID and kernel, so the program can <code>await import('node:fs')</code> to read/write any file and <code>await import('node:child_process')</code> to spawn unconfined subprocesses.</p>
 <p>The default sandbox mode is read-only, so &quot;Code Mode + default sandbox&quot; = full escape, CVSS 10.0/9.8.</p>
 <h3>Lesson 1: enumerate every execution path and check each against the boundary</h3>
 <p>When reviewing a sandbox, do not ask &quot;is there a sandbox&quot; — ask whether <strong>every path that can execute code</strong> goes through the same policy surface:</p>
 <table><thead><tr><th>Path</th><th>Sandboxed (rc.7 pre-fix)?</th></tr></thead><tr><td>bash / pwsh</td><td>✅ <code>ctx.sandbox.confine</code></td></tr><tr><td>fs tools</td><td>✅ fence + path canonicalization</td></tr><tr><td>run_code (worker-thread)</td><td>❌ no file-effect policy</td></tr><tr><td>workflow worker-thread (node:vm)</td><td>❌ same class of unconfined surface</td></tr><tr><td>cordis-host-runner dynamic plugins</td><td>❌ documented as &quot;not containment&quot;</td></tr></table>
 <h3>Lesson 2: fail-closed beats fail-open</h3>
-<p>Before the root fix (confining the worker via <code>ctx.sandbox.confine</code>) lands, the correct minimal mitigation is <strong>fail-closed</strong>: worker-thread isolation + confined policy (read-only/workspace-write) → refuse execution instead of silently running. Shipped branch <code>fix/run-code-failclosed-sandbox</code>: resolves the sandbox policy before dispatch; <code>runtime.isolation === &#x27;worker-thread&#x27; &amp;&amp; policyMode !== &#x27;danger-full-access&#x27;</code> → throws (with three ways out: DSH_TOOLS_MODE=native / danger-full-access / a confinable runtime).</p>
+<p>Before the root fix (confining the worker via <code>ctx.sandbox.confine</code>) lands, the correct minimal mitigation is <strong>fail-closed</strong>: worker-thread isolation + confined policy (read-only/workspace-write) → refuse execution instead of silently running. Shipped branch <code>fix/run-code-failclosed-sandbox</code>: resolves the sandbox policy before dispatch; <code>runtime.isolation === 'worker-thread' &amp;&amp; policyMode !== 'danger-full-access'</code> → throws (with three ways out: DSH_TOOLS_MODE=native / danger-full-access / a confinable runtime).</p>
 <h2>3. Case study: #3212 allow-lists over deny-lists</h2>
 <p>The principle from the dsh-crew discussion: <strong>a textual safety belt is policy, not a security boundary</strong>. Telling the agent &quot;do not run dangerous commands&quot; is not the same as the sandbox &quot;not allowed&quot; — the former can be bypassed (echo, command-line, MCP), the latter is kernel-enforced.</p>
 <p>Audit your deployment: if a security guarantee lives only in a system prompt or plugin description, it is not a boundary; turn it into sandbox policy / permission enumeration / an approval gate.</p>
