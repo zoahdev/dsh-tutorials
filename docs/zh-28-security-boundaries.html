@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>沙箱信任边界与 fail-closed 原则（Security Boundaries） · dsh tutorials</title>
+<style>  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>沙箱信任边界与 fail-closed 原则（Security Boundaries）</h1>
+<blockquote><p>适用：部署 dsh 的运维、写插件的作者、做安全评审的人。本章把社区 2026-08 的三次安全讨论（#3245/#3212/#3223）沉淀成可操作的检查清单。全部代码引用对照官方 main HEAD <code>99f6f02</code>（rc.7）。</p></blockquote>
+<h2>1. 一句话原则</h2>
+<p><strong>信任边界必须可强制，不能靠声明。</strong> 文档写&quot;这是隔离&quot;不算隔离；沙箱说&quot;read-only&quot;就必须所有执行路径都真的只读。任何一个绕过点都会让整条边界失效。</p>
+<h2>2. 案例：#3245 run_code 沙箱逃逸（Critical）</h2>
+<h3>发生了什么</h3>
+<p>dsh 的普通执行路径都走文件沙箱：</p>
+<ul><li>bash → <code>bash-sandbox</code> 的 <code>ctx.sandbox.confine(...)</code>（Landlock/bwrap/Seatbelt）；</li><li>文件工具 → <code>fs-sandbox</code> 的围栏（read-only 拒绝一切变更，workspace-write 限工作区内）。</li></ul>
+<p>但 <strong>Code Mode 的 <code>run_code</code></strong> 走第三条路：<code>code-runtime-worker-thread</code> 用 <code>new Worker(path, { env: {}, execArgv: [] })</code> 启动 Node worker，模型代码经 <code>new AsyncFunction(...)</code> 执行——<strong>没有任何文件效应策略</strong>（无 <code>ctx.sandbox.confine</code>、无 <code>--experimental-permission</code>）。worker 与宿主进程同 UID、同内核，模型程序可以 <code>await import(&#x27;node:fs&#x27;)</code> 读写任意文件、<code>await import(&#x27;node:child_process&#x27;)</code> 起任意无约束子进程。</p>
+<p>默认沙箱是 read-only（<code>sandbox-policy</code> 默认值），所以&quot;Code Mode + 默认沙箱&quot;= 完全逃逸，CVSS 10.0/9.8。</p>
+<h3>教训一：枚举所有执行路径，逐个对照边界</h3>
+<p>检查一个沙箱时，不要只看&quot;有没有沙箱&quot;，要看<strong>每一条能执行代码的路径</strong>是否都经过同一个策略面：</p>
+<table><thead><tr><th>路径</th><th>是否受沙箱约束（rc.7 修复前）</th></tr></thead><tr><td>bash / pwsh</td><td>✅ <code>ctx.sandbox.confine</code></td></tr><tr><td>fs 工具</td><td>✅ 围栏 + 路径规范化</td></tr><tr><td>run_code (worker-thread)</td><td>❌ 无文件效应策略</td></tr><tr><td>workflow worker-thread (node:vm)</td><td>❌ 同类无约束面</td></tr><tr><td>cordis-host-runner 动态插件域</td><td>❌ 文档明示 not containment</td></tr></table>
+<h3>教训二：fail-closed 优于 fail-open</h3>
+<p>在根修（把 worker 纳入 <code>ctx.sandbox.confine</code>）落地前，正确的最小缓解是 <strong>fail-closed</strong>：worker-thread isolation + 受限策略（read-only/workspace-write）→ 拒绝执行，而不是静默放行。已落地分支 <code>fix/run-code-failclosed-sandbox</code>：dispatch 前解析沙箱策略，<code>runtime.isolation === &#x27;worker-thread&#x27; &amp;&amp; policyMode !== &#x27;danger-full-access&#x27;</code> → 抛错（提示三条出路：DSH_TOOLS_MODE=native / danger-full-access / 挂可约束 runtime）。</p>
+<h2>3. 案例：#3212 允许清单 &gt; 禁止清单</h2>
+<p>dsh-crew 讨论里提炼的原则：<strong>文本安全带是 policy，不是安全边界</strong>。让 agent&quot;不要执行危险命令&quot;的提示，和沙箱&quot;不允许执行&quot;是两回事——前者可被绕过（echo/命令行/MCP 都能绕开文本规则），后者是内核强制。</p>
+<p>检查你的部署：如果某个安全保证只存在于 system prompt 或插件描述里，它就不是边界；要把它变成沙箱策略/权限枚举/审批门。</p>
+<h2>4. 案例：#3223 attestation 锚点（可验证性）</h2>
+<p>远程部署的信任边界（#3209/#3210/#3211 三部曲）核心是<strong>可验证而非可声明</strong>：</p>
+<ul><li>externalUrl=说对地址、Tailscale-User-Login=说对身份、surface=装到一起——都不改 trust fence；</li><li>ToolRuntime 的 attestation/settlement 锚点（#3223）的&quot;词汇&quot;应统一到 CHA2A（#3192），避免第三种方言。</li></ul>
+<p>给运维的自查：你的&quot;可信来源&quot;是<strong>进程强制</strong>（签名验证、令牌校验）还是<strong>约定俗成</strong>（文档说&quot;只从内网访问&quot;）？后者在威胁模型里不算控制。</p>
+<h2>5. 一张可复用的检查表</h2>
+<p>做任何 dsh 安全评审时：</p>
+<p>1. <strong>列执行面</strong>：bash/fs/run_code/workflow/cordis-runner/MCP——每条路径落到策略面，标注 ✅/❌；</p>
+<p>2. <strong>找绕过</strong>：对每个 ❌ 问&quot;默认配置下可达吗？&quot;（#3245 就是&quot;Code Mode 必须显式开，但开了就是默认可达&quot;）；</p>
+<p>3. <strong>定 fail-closed</strong>：无法立即根修的，先让&quot;受限策略 × 无约束路径&quot;组合<strong>报错</strong>而不是放行；</p>
+<p>4. <strong>查文档诚实度</strong>：README/Agent Note 写的&quot;containment, not a security boundary&quot;要如实翻译成用户能懂的信任等级（worker-thread ≈ danger-full-access）；</p>
+<p>5. <strong>回归测试</strong>：每个边界配一个&quot;逃逸尝试&quot;用例（#3245 补丁的测试就是 read-only + worker-thread → 必须拒绝）。</p>
+<h2>6. 相关社区资产</h2>
+<ul><li>家族图谱家族 13「无约束执行面绕过沙箱」：dsh-ecosystem/docs/bug-families.md</li><li>补丁队列 #48（#3245 fail-closed）：dsh-docs/docs/specs/upstream-patches.md</li><li>教程 zh-25：社区贡献工作流（怎么把这类发现写成证据级回复）</li><li>教程 zh-27：家族图谱 triage（新 bug 先查族）</li></ul>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>
