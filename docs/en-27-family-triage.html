@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bug-Family Triage: Classify and Verify Issues with the Family Map · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>Bug-Family Triage: Classify and Verify Issues with the Family Map</h1>
+<blockquote><p>For anyone contributing to the dsh community: before answering a new bug report, check the family map first. The map and workflow below come from real operations on 2026-08-19 (30+ evidence-grade verification replies).</p></blockquote>
+<h2>1. Why family-ize</h2>
+<p>In the dsh discussions, <strong>the same root cause routinely shows up across many posts</strong>: different environments, different symptoms, reporters who do not know about each other. Three costs:</p>
+<ul><li>maintainers must piece threads together to see the real blast radius;</li><li>every new thread re-explains everything from zero;</li><li>a fix lands for &quot;this thread&quot; without closing &quot;this class&quot;.</li></ul>
+<p>Family-izing groups threads by root cause: a new post is checked against the map first, and when it hits a family you cite the canonical thread and add incremental evidence instead of opening a parallel universe.</p>
+<h2>2. What the family map is</h2>
+<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">The known bug family map</a> (docs/bug-families.md in dsh-ecosystem) currently tracks 10 verified families. Each entry carries:</p>
+<table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tr><td>Trigger model</td><td>How you get hit</td></tr><tr><td>Canonical thread(s)</td><td>The family's authoritative post numbers</td></tr><tr><td>Verified root cause</td><td>Official source file:line, directly checkable</td></tr><tr><td>Fix suggestion</td><td>Minimal patch + regression-test convention</td></tr><tr><td>Status</td><td>Whether upstream has fixed it</td></tr></table>
+<p>The 10 families at a glance:</p>
+<p>1. <strong>npm dist-tag publishing</strong> (#2763: latest stuck at 0.0.1-rc.1; 160/325 registry plugins affected)</p>
+<p>2. <strong>%TEMP% cleanup</strong> (#1961/#3190/#3203: runtime-private dirs deleted → crash or fail-closed)</p>
+<p>3. <strong>Corrupt-artifact isolation</strong> (#675/#1047/#3173: one bad file takes down lists/boot)</p>
+<p>4. <strong>Module double-instance symbol split</strong> (#1697/#2660/#3033: the undefined.prepare family)</p>
+<p>5. <strong>Reasoning-field aliases</strong> (#199: vLLM sends delta.reasoning; adapter reads only reasoning_content)</p>
+<p>6. <strong>Windows token/ACL sandbox</strong> (#3207/#3216/#3195)</p>
+<p>7. <strong>Remote-deployment trust fences</strong> (#3209/#3210/#3211)</p>
+<p>8. <strong>Plugin load/rollback</strong> (#3173/#3213)</p>
+<p>9. <strong>Search/rendering/metadata</strong> (#3202/#3206/#3177/#3111)</p>
+<p>10. <strong>Tool-result observability</strong> (#3182: ok field unreliable; archive ≠ delete)</p>
+<h2>3. When you hit a family</h2>
+<p>1. <strong>Cite the canonical thread</strong> instead of re-analyzing — &quot;this shares the #2660 root cause (double-instance symbol split)&quot;;</p>
+<p>2. <strong>Add incremental evidence</strong>: new environment (macOS/WSL/Windows 10 vs 11), new trigger path, new field name, new measurement;</p>
+<p>3. Provide a <strong>minimal repro for your environment</strong> (command + expected/actual) so maintainers can verify directly;</p>
+<p>4. Only suggest a fix if you have a <strong>new angle</strong>; a plain &quot;repro +1, env: …&quot; is enough for a me-too.</p>
+<p>Example (#3033): the reporter hit <code>undefined.prepare</code> on macOS after installing dsh-computer-use; argszero linked it into the #2660 family and sharpened the trigger model to &quot;any second physical copy&quot;. That is the standard family contribution: one increment, whole family benefits.</p>
+<h2>4. When nothing matches</h2>
+<p>First run the <a href="./en-25-community-workflow.md">zh-25</a> verification triple: shallow clone, pin HEAD, check citations.</p>
+<pre><code>git clone --depth 1 https://github.com/deepseek-ai/deepseek-harness work/src   # shallow clone
+git log -1 --format=&quot;%H&quot;                                                       # record the baseline
+node work/dsh-ecosystem/scripts/verify-citation.mjs &lt;repo&gt; &lt;file:line&gt;         # line-number check</code></pre>
+<p>A confirmed new root cause is <strong>a new family</strong>: post the file:line evidence in your reply, then add an entry to the map (instructions at the top of the file). The map is a living asset, kept fresh by community backfill.</p>
+<h2>5. Family-specific test conventions</h2>
+<p>Do not paper over a family with one isolated test; each family has a canonical regression shape:</p>
+<table><thead><tr><th>Family</th><th>Test convention</th></tr></thead><tr><td>Corrupt-artifact isolation</td><td><code>[valid, bad, valid]</code> flow: bad records must not swallow valid ones or overwrite the latest</td></tr><tr><td>%TEMP% cleanup</td><td>delete the runtime dir → next call recreates (provider side); runner boundary stays fail-loud</td></tr><tr><td>Symbol split</td><td>double-copy load → same scheduler instance; orphaned tool_calls no longer replay into 400</td></tr><tr><td>Reasoning aliases</td><td>three tests: alias accepted / official field wins / reasoning-only stop is NOT EMPTY_RESPONSE</td></tr><tr><td>Windows tokens</td><td>curl.exe regression (TLS handshake inside sandbox) + event-log ACL audit</td></tr></table>
+<h2>6. Our worked examples</h2>
+<ul><li><strong>#199 → family 5</strong>: two reporters (DiGuStudent / dietmarscharf) filed the vLLM reasoning-field drop independently. After verifying <code>translate.ts:132</code>, we completed the mechanical chain &quot;EMPTY_RESPONSE → retry-policy storm&quot; and suggested merging both branches into one PR — two threads became one maintainer-ready PR description.</li><li><strong>#3182 → families 9/10</strong>: of the five findings, archive≠delete, the unreliable ok field, and node_modules scanning mapped to &quot;tool-result observability&quot; and &quot;search semantics&quot;; each was confirmed with file:line before replying.</li><li><strong>#2011 → new family outside the map</strong>: host.describe hardcoding 0.0.1 (api-proxy.ts:2863-2868) is a fresh root cause; the reply gives the contract mismatch and fix path, ready to backfill.</li></ul>
+<h2>7. TL;DR</h2>
+<p><strong>Check the map first; when it hits, append increments; when it misses, found a new family.</strong> Community contribution is not about reply count — it is about moving every new thread toward &quot;maintainers can fix the whole class in one pass&quot;.</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>

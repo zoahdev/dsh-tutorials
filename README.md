@@ -61,7 +61,10 @@
 | [zh-25-community-workflow.md](./zh-25-community-workflow.md) | 社区贡献工作流：从 bug 报告到证据级回复（值班/核验/GraphQL/家族化） |
 | [en-25-community-workflow.md](./en-25-community-workflow.md) | Community contribution workflow: evidence-grade replies (triage/verify/GraphQL/family-ize) |
 | [zh-26-submission-gate.md](./zh-26-submission-gate.md) | 通过 awesome-dsh-plugin 收录 gate：三个检查/年龄门/regate 自动兜底/403 坑/故障表 |
+| [zh-27-family-triage.md](./zh-27-family-triage.md) | 用已知问题家族图谱做 bug 分类核验：10 个家族/命中挂增量/未中开新族/家族测试惯例 |
 | [en-26-submission-gate.md](./en-26-submission-gate.md) | Passing the awesome-dsh-plugin Submission gate: checks / age gate / regate fallback / 403 pitfall / troubleshooting |
+| [zh-26-submission-gate.md](./zh-26-submission-gate.md) | 通过 awesome-dsh-plugin 收录 gate：三个检查/年龄门/regate 自动兜底/403 坑/故障表 |
+| [en-27-family-triage.md](./en-27-family-triage.md) | Bug-family triage: 10 verified families / append increments / found a new family / family test conventions |
 | [en-24-pipeline.md](./en-24-pipeline.md) | The plugin pipeline: 8 verified plugins in one day (skeleton/quality gate/pitfalls/community loop) |
 
 ## 配套资源

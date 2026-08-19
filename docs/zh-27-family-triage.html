@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用已知问题家族图谱做 bug 分类核验（Family Triage） · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>用已知问题家族图谱做 bug 分类核验（Family Triage）</h1>
+<blockquote><p>适用：想给 dsh 社区做贡献的任何人——遇到新 bug 帖时，先查家族图谱再开口。本文的图谱与方法均来自 2026-08-19 的实测运营（30+ 条核验回复沉淀）。</p></blockquote>
+<h2>1. 为什么要&quot;家族化&quot;</h2>
+<p>dsh 讨论区里，<strong>同一个根因往往散在多帖</strong>：用户环境不同、症状不同、帖主互相不知道对方的存在。三个坏处：</p>
+<ul><li>维护者要跨帖拼图才知道问题的真实影响面；</li><li>每个新帖都从零解释一遍，浪费所有人的时间；</li><li>修复时只修了&quot;这一帖&quot;，没堵住&quot;这一类&quot;。</li></ul>
+<p>家族化就是把散帖按根因归并：新帖先对照家族，命中就引用根因帖 + 补增量证据，而不是重新开一个平行宇宙。</p>
+<h2>2. 家族图谱是什么</h2>
+<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">dsh-ecosystem/docs/bug-families.md</a>（已知问题家族图谱）目前收录 10 个已核验家族，每个家族包含：</p>
+<table><thead><tr><th>字段</th><th>含义</th></tr></thead><tr><td>触发模型</td><td>什么情况下会中招</td></tr><tr><td>代表帖</td><td>该家族的 canonical 帖子编号</td></tr><tr><td>已验证根因</td><td>官方源码 file:line，直接可查</td></tr><tr><td>修复建议</td><td>最小补丁 + 回归测试惯例</td></tr><tr><td>状态</td><td>官方是否已修</td></tr></table>
+<p>10 个家族一览：</p>
+<p>1. <strong>npm dist-tag 发布族</strong>（#2763：latest 卡 0.0.1-rc.1，160/325 插件被命中）</p>
+<p>2. <strong>%TEMP% 清理族</strong>（#1961/#3190/#3203：运行期私有目录被删 → 崩溃或 fail-closed）</p>
+<p>3. <strong>坏工件隔离族</strong>（#675/#1047/#3173：一个坏文件拖垮列表/启动）</p>
+<p>4. <strong>模块双实例符号分裂族</strong>（#1697/#2660/#3033：undefined.prepare 全家桶）</p>
+<p>5. <strong>推理字段别名族</strong>（#199：vLLM 发 delta.reasoning，adapter 只读 reasoning_content）</p>
+<p>6. <strong>Windows 令牌/ACL 沙箱族</strong>（#3207/#3216/#3195）</p>
+<p>7. <strong>远程部署信任边界族</strong>（#3209/#3210/#3211）</p>
+<p>8. <strong>插件加载/回滚族</strong>（#3173/#3213）</p>
+<p>9. <strong>检索/渲染/元数据族</strong>（#3202/#3206/#3177/#3111）</p>
+<p>10. <strong>工具结果可信度族</strong>（#3182：ok 字段不可信、归档≠删除）</p>
+<h2>3. 命中家族后怎么做</h2>
+<p>1. <strong>引用根因帖编号</strong>，别重复贴分析——&quot;这与 #2660 同根因（双实例 symbol 分裂）&quot;；</p>
+<p>2. <strong>补增量证据</strong>：新环境（macOS/WSL/Windows 10 vs 11）、新触发路径、新字段名、新测量数据；</p>
+<p>3. 给出<strong>与你环境匹配的最小复现</strong>（命令 + 期望/实际），让维护者能直接验证；</p>
+<p>4. 如果有<strong>新修复角度</strong>才写建议；只是又一个 me too 就一句&quot;复现 +1 + 环境&quot;足够。</p>
+<p>示例（#3033 的贡献方式）：帖主在 macOS 上装 dsh-computer-use 后复现 <code>undefined.prepare</code>，argszero 把它挂到 #2660 家族并指出&quot;触发模型扩展为任何第二物理副本&quot;——这就是标准的家族贡献：一次增量，全家族受益。</p>
+<h2>4. 没命中家族怎么办</h2>
+<p>先按 <a href="./zh-25-community-workflow.md">zh-25</a> 的核验三件套确认是真 bug：</p>
+<pre><code>git clone --depth 1 https://github.com/deepseek-ai/deepseek-harness work/src   # 浅克隆
+git log -1 --format=&quot;%H&quot;                                                       # 记录核验基线
+node work/dsh-ecosystem/scripts/verify-citation.mjs &lt;repo&gt; &lt;file:line&gt;         # 行号校验</code></pre>
+<p>确认后：<strong>新根因 = 新家族</strong>。在自己的回复里给出 file:line 证据，然后把图谱加一个新条目（README 指引见图谱文件头）。图谱是活的，靠社区回填。</p>
+<h2>5. 家族修复的测试惯例</h2>
+<p>每个家族都有配套的回归测试形状，别用孤立单测糊弄：</p>
+<table><thead><tr><th>家族</th><th>测试惯例</th></tr></thead><tr><td>坏工件隔离</td><td><code>[valid, bad, valid]</code> 三段流：坏记录不吞合法记录、不被当作最新覆盖</td></tr><tr><td>%TEMP% 清理</td><td>删除运行期目录后下一次调用自动重建（provider 侧），runner 边界仍 fail-loud</td></tr><tr><td>符号分裂</td><td>双副本加载 → 调度器同一实例；孤儿 tool_calls 不再回放成 400</td></tr><tr><td>推理别名</td><td>三测试：别名接收 / 官方字段优先 / reasoning-only 不再映射 EMPTY_RESPONSE</td></tr><tr><td>Windows 令牌</td><td>curl.exe 回归（沙箱内 TLS 握手成功）+ 事件日志定位被拒对象</td></tr></table>
+<h2>6. 我们的实测案例</h2>
+<ul><li><strong>#199 → 家族 5</strong>：两帖（DiGuStudent / dietmarscharf）各自报 vLLM 推理字段被丢。核验 <code>translate.ts:132</code> 后把&quot;EMPTY_RESPONSE → retry-policy 重试风暴&quot;机械链补齐，建议两份分支合并成一个 PR——两帖合成一份维护者可直接用的 PR 描述。</li><li><strong>#3182 → 家族 9/10</strong>：帖主五发现里，归档≠删除、ok 字段不可信、node_modules 被扫分别命中&quot;工具结果可信度&quot;与&quot;检索语义不一致&quot;，用 file:line 逐条确认后回帖。</li><li><strong>#2011 → 图谱外新条目</strong>：host.describe 硬编码 0.0.1（api-proxy.ts:2863-2868）是新根因，回复里给了契约对照与修复路径，后续可回填图谱。</li></ul>
+<h2>7. 一句话总结</h2>
+<p><strong>先查图谱，命中挂增量，未命中立新族</strong>——社区贡献不是比谁回复多，而是让每个新帖都朝&quot;维护者能一次修完一类&quot;的方向移动。</p>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>
