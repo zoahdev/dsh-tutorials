@@ -1,6 +1,6 @@
 # dsh-tutorials
 
-> Bilingual (中文 + English) tutorials for DeepSeek Harness: 27 posts covering getting started, architecture, plugin development, pre-publish checks with dsh-plugin-doctor, awesome-list review checklists, prerelease peer/ERESOLVE troubleshooting, plugin search, marketplace publishing, the undefined.prepare crash family, and bug-family triage.
+> Bilingual (中文 + English) tutorials for DeepSeek Harness: 28 posts covering getting started, architecture, plugin development, pre-publish checks with dsh-plugin-doctor, awesome-list review checklists, prerelease peer/ERESOLVE troubleshooting, plugin search, marketplace publishing, the undefined.prepare crash family, bug-family triage, and sandbox trust boundaries.
 
 ## Key facts
 
@@ -18,3 +18,4 @@
 - zh-25/en-25: community contribution workflow (triage/verify/GraphQL/family-ize)
 - zh-26/en-26: passing the awesome-dsh-plugin submission gate (age/commits/regate/403)
 - zh-27/en-27: bug-family triage (10 verified families / append increments / found a new family / family test conventions)
+- zh-28/en-28: sandbox trust boundaries & fail-closed (#3245 run_code escape / allow-lists / verifiability / checklist)
