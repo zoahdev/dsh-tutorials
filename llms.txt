@@ -17,5 +17,5 @@
 - zh-11/en-11: debugging the undefined.prepare crash family
 - zh-25/en-25: community contribution workflow (triage/verify/GraphQL/family-ize)
 - zh-26/en-26: passing the awesome-dsh-plugin submission gate (age/commits/regate/403)
-- zh-27/en-27: bug-family triage (10 verified families / append increments / found a new family / family test conventions)
+- zh-27/en-27: bug-family triage (13 verified families / append increments / found a new family / family test conventions)
 - zh-28/en-28: sandbox trust boundaries & fail-closed (#3245 run_code escape / allow-lists / verifiability / checklist)

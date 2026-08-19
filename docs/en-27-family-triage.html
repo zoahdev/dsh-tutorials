@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bug-Family Triage: Classify and Verify Issues with the Family Map · dsh tutorials</title>
-<style>
-  :root { color-scheme: light; }
+<style>  :root { color-scheme: light; }
   body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
   header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
@@ -37,9 +36,9 @@
 <ul><li>maintainers must piece threads together to see the real blast radius;</li><li>every new thread re-explains everything from zero;</li><li>a fix lands for &quot;this thread&quot; without closing &quot;this class&quot;.</li></ul>
 <p>Family-izing groups threads by root cause: a new post is checked against the map first, and when it hits a family you cite the canonical thread and add incremental evidence instead of opening a parallel universe.</p>
 <h2>2. What the family map is</h2>
-<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">The known bug family map</a> (docs/bug-families.md in dsh-ecosystem) currently tracks 12 verified families. Each entry carries:</p>
-<table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tr><td>Trigger model</td><td>How you get hit</td></tr><tr><td>Canonical thread(s)</td><td>The family's authoritative post numbers</td></tr><tr><td>Verified root cause</td><td>Official source file:line, directly checkable</td></tr><tr><td>Fix suggestion</td><td>Minimal patch + regression-test convention</td></tr><tr><td>Status</td><td>Whether upstream has fixed it</td></tr></table>
-<p>The 12 families at a glance:</p>
+<p><a href="https://github.com/zoahdev/dsh-ecosystem/blob/main/docs/bug-families.md">The known bug family map</a> (docs/bug-families.md in dsh-ecosystem) currently tracks 13 verified families. Each entry carries:</p>
+<table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tr><td>Trigger model</td><td>How you get hit</td></tr><tr><td>Canonical thread(s)</td><td>The family&#x27;s authoritative post numbers</td></tr><tr><td>Verified root cause</td><td>Official source file:line, directly checkable</td></tr><tr><td>Fix suggestion</td><td>Minimal patch + regression-test convention</td></tr><tr><td>Status</td><td>Whether upstream has fixed it</td></tr></table>
+<p>The 13 families at a glance:</p>
 <p>1. <strong>npm dist-tag publishing</strong> (#2763: latest stuck at 0.0.1-rc.1; 160/325 registry plugins affected)</p>
 <p>2. <strong>%TEMP% cleanup</strong> (#1961/#3190/#3203: runtime-private dirs deleted → crash or fail-closed)</p>
 <p>3. <strong>Corrupt-artifact isolation</strong> (#675/#1047/#3173: one bad file takes down lists/boot)</p>
@@ -52,6 +51,7 @@
 <p>10. <strong>Tool-result observability</strong> (#3182: ok field unreliable; archive ≠ delete)</p>
 <p>11. <strong>Out-of-tree session-event envelope</strong> (#3191/#1538/#1584/#1619/#2778: ignorable write-side gap; read side ready; implementation verified)</p>
 <p>12. <strong>Same-mode sandbox escalation false errors</strong> (#3219: full-access requests full-access and gets &quot;not strictly wider&quot;; fix branch ready)</p>
+<p>13. <strong>Unconfined execution surfaces bypass the sandbox</strong> (#3245: run_code worker-thread has no file-effect confinement -&gt; sandbox escape; fail-closed patch ready)</p>
 <h2>3. When you hit a family</h2>
 <p>1. <strong>Cite the canonical thread</strong> instead of re-analyzing — &quot;this shares the #2660 root cause (double-instance symbol split)&quot;;</p>
 <p>2. <strong>Add incremental evidence</strong>: new environment (macOS/WSL/Windows 10 vs 11), new trigger path, new field name, new measurement;</p>
