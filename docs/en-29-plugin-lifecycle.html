@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plugin lifecycle: install it, unplug it · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>Plugin lifecycle: install it, unplug it (Plugin Lifecycle)</h1>
+<blockquote><p>For every dsh user, especially those with a pile of plugins to clean up. This</p><p>chapter covers the boundary of the official <code>dsh plugin</code> commands, and how</p><p>dsh-unplug makes every plugin truly pluggable: list, full uninstall,</p><p>disable-without-delete, and one-command repair.</p></blockquote>
+<h2>1. What the official CLI can and cannot do</h2>
+<p>The official <code>dsh plugin</code> has two core concepts:</p>
+<ul><li><strong>bundle</strong> — an npm package whose manifest declares <code>dsh.bundle.patch</code>, listed</li></ul>
+<p>  in the profile's <code>dsh.profile.bundles</code>;</p>
+<ul><li><strong>patch rows</strong> — plugin rows under <code>- insert:</code> / <code>- override:</code> in</li></ul>
+<p>  <code>cordis.patch.yml</code> (profile level and home level).</p>
+<p><code>dsh plugin --profile &lt;name&gt; add &lt;pkg&gt;</code> writes both the bundles list and the pnpm</p>
+<p>dependency; <code>dsh plugin --profile &lt;name&gt; remove &lt;pkg&gt;</code> <strong>only</strong> touches the bundles</p>
+<p>list and dependencies. It leaves behind:</p>
+<p>1. plugin rows still present in profile/home <code>cordis.patch.yml</code>;</p>
+<p>2. no disable-without-delete (and later re-enable);</p>
+<p>3. no post-removal audit (orphan rows, dangling bundles).</p>
+<p>That is exactly why plugins feel easy to install but hard to unplug.</p>
+<h2>2. Install dsh-unplug</h2>
+<pre><code>dsh plugin add dsh-unplug</code></pre>
+<p>Zero runtime dependencies, read-only by default; destructive operations require</p>
+<p>explicit confirmation (<code>--yes</code> / <code>--force</code> on the CLI, <code>force: true</code> for the</p>
+<p>agent tool).</p>
+<h2>3. The daily three commands</h2>
+<pre><code>dsh-unplug                    # no args → friendly menu
+dsh-unplug list               # what is installed (bundles + patch rows)
+dsh-unplug fix --yes          # one-command repair: dangling bundles + orphan rows</code></pre>
+<p>Cleaning up:</p>
+<pre><code>dsh-unplug remove &lt;plugin&gt; --yes          # full uninstall (bundle + rows + deps)
+dsh-unplug remove --dry-run &lt;plugin&gt;      # preview only, nothing is executed
+dsh-unplug disable &lt;plugin&gt;               # disable without deleting; enable anytime
+dsh-unplug enable &lt;plugin&gt;</code></pre>
+<p>Forgot the name? Just run <code>dsh-unplug remove</code> and it lists installed plugins with</p>
+<p>copy-paste-ready commands.</p>
+<h2>4. What it actually changes</h2>
+<table><thead><tr><th>Layer</th><th>remove</th><th>disable</th></tr></thead><tr><td><code>dsh.profile.bundles</code></td><td>removed from list</td><td>moved to <code>disabledBundles</code></td></tr><tr><td><code>dependencies</code></td><td>pnpm remove</td><td>kept</td></tr><tr><td>profile <code>cordis.patch.yml</code></td><td>row deleted</td><td>row gets <code>disabled: true</code></td></tr><tr><td>home <code>cordis.patch.yml</code></td><td>same</td><td>same</td></tr><tr><td>leftovers</td><td>auto re-audits after</td><td>—</td></tr></table>
+<p><code>reconcile</code> / <code>fix</code> do the reverse: drop unresolvable entries from the bundles</p>
+<p>list and strip rows that reference packages which no longer exist.</p>
+<h2>5. Audit &amp; troubleshooting</h2>
+<pre><code>dsh-unplug audit --json       # machine-readable: orphan rows / dangling bundles / missing patches
+dsh-unplug list --all         # scan every profile at once</code></pre>
+<p>Best practice: after an upgrade or when dsh fails to boot post-removal, run</p>
+<p><code>dsh-unplug audit</code> first, then compare with <code>dsh --profile &lt;name&gt; --dump-config</code>.</p>
+<h2>6. Notes</h2>
+<ul><li><code>remove</code> is destructive: it removes dependencies and edits patch files. Use</li></ul>
+<p>  <code>--dry-run</code> before <code>--yes</code>;</p>
+<ul><li>rows contributed by official bundles (e.g. the tool rows inside</li></ul>
+<p>  <code>@deepseek-ai/dsh-base</code>) are <strong>not</strong> orphans — audit only reports orphans at</p>
+<p>  profile/home layer;</p>
+<ul><li>repository: github.com/zoahdev/dsh-unplug (npm: dsh-unplug).</li></ul>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>

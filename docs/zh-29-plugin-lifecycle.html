@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>插件生命周期管理：装了就要能拔（Plugin Lifecycle） · dsh tutorials</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.75; color: #1f2328; background: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.nav { border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  header.nav a { color: #0969da; text-decoration: none; }
+  header.nav a:hover { text-decoration: underline; }
+  h1 { font-size: 28px; margin: 32px 0 8px; }
+  h2 { font-size: 22px; margin-top: 36px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; margin-top: 28px; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 2px 6px; font-size: 0.9em; font-family: "Cascadia Code", Consolas, monospace; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 10px; text-align: left; font-size: 14px; }
+  blockquote { margin: 16px 0; padding: 2px 14px; border-left: 4px solid #d0d7de; color: #57606a; }
+  a { color: #0969da; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee; color: #6e7781; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="./index.html">📚 dsh tutorials</a>
+  <a href="./zh-24-pipeline.html">插件开发流水线：8 个插件一天上线</a><a href="./en-24-pipeline.html">The Plugin Pipeline: 8 Plugins in One Day</a>
+</header>
+<div class="wrap">
+<h1>插件生命周期管理：装了就要能拔（Plugin Lifecycle）</h1>
+<blockquote><p>适用：所有 dsh 用户，尤其是&quot;装了一堆插件想清理&quot;的人。本章讲官方 <code>dsh plugin</code> 命令的边界，以及用 dsh-unplug 做到&quot;所有插件插拔自如&quot;：列出、完整卸载、禁用不删、一键修复。</p></blockquote>
+<h2>1. 官方能做什么，不能做什么</h2>
+<p>官方 <code>dsh plugin</code> 有两个基本概念：</p>
+<ul><li><strong>bundle</strong>：npm 包，manifest 声明 <code>dsh.bundle.patch</code>，装进 profile 的 <code>dsh.profile.bundles</code> 列表；</li><li><strong>patch 行</strong>：<code>cordis.patch.yml</code> 里 <code>- insert:</code> / <code>- override:</code> 下列出的插件行（profile 和 home 各有一份）。</li></ul>
+<p><code>dsh plugin --profile &lt;name&gt; add &lt;pkg&gt;</code> 会同时写 bundles 列表 + pnpm 依赖；<code>dsh plugin --profile &lt;name&gt; remove &lt;pkg&gt;</code> <strong>只</strong>处理 bundles 列表和依赖。它不管：</p>
+<p>1. profile/home <code>cordis.patch.yml</code> 里残留的插件行；</p>
+<p>2. &quot;先禁用不删&quot;（disable），之后想恢复（enable）；</p>
+<p>3. 拔完之后的残留审计（孤儿行、悬空 bundle）。</p>
+<p>这就是&quot;装了好装、拔不下来&quot;的真实来源。</p>
+<h2>2. 安装 dsh-unplug</h2>
+<pre><code>dsh plugin add dsh-unplug</code></pre>
+<p>零运行时依赖、默认只读；破坏性操作必须显式确认（CLI <code>--yes</code> / <code>--force</code>，agent 工具 <code>force: true</code>）。</p>
+<h2>3. 日常三件套</h2>
+<pre><code>dsh-unplug                    # 什么都不输：直接给你中文菜单
+dsh-unplug list               # 看看装了什么（bundles + 补丁行）
+dsh-unplug fix --yes          # 一键修复：清掉悬空 bundle 和孤立补丁行</code></pre>
+<p>装多了想清理：</p>
+<pre><code>dsh-unplug remove &lt;插件&gt; --yes          # 完整卸载（bundle + 补丁行 + 依赖）
+dsh-unplug remove --dry-run &lt;插件&gt;      # 先预览会删什么，不执行
+dsh-unplug disable &lt;插件&gt;               # 临时禁用不删，随时 enable 恢复
+dsh-unplug enable &lt;插件&gt;</code></pre>
+<p>忘记插件名？直接 <code>dsh-unplug remove</code>，它会列出当前已装的插件和可直接复制的命令。</p>
+<h2>4. 它到底改了什么</h2>
+<table><thead><tr><th>层</th><th>remove 做什么</th><th>disable 做什么</th></tr></thead><tr><td><code>dsh.profile.bundles</code></td><td>移出列表</td><td>移入 <code>disabledBundles</code></td></tr><tr><td><code>dependencies</code></td><td>pnpm remove</td><td>保留</td></tr><tr><td>profile <code>cordis.patch.yml</code></td><td>删除该插件行</td><td>行上加 <code>disabled: true</code></td></tr><tr><td>home <code>cordis.patch.yml</code></td><td>同上</td><td>同上</td></tr><tr><td>残留</td><td>删完自动重跑 audit</td><td>—</td></tr></table>
+<p><code>reconcile</code> / <code>fix</code> 则反过来：把 bundles 列表里解析不了的包、补丁行里引用不存在包的记录，一次性清掉。</p>
+<h2>5. 审计与排查</h2>
+<pre><code>dsh-unplug audit --json       # 机器可读：孤儿行 / 悬空 bundle / 缺失 patch 文件
+dsh-unplug list --all         # 一次看所有 profile</code></pre>
+<p>真实环境建议：每次升级或&quot;拔插件后 dsh 起不来&quot;时，先跑 <code>dsh-unplug audit</code>，再看 <code>dsh --profile &lt;name&gt; --dump-config</code> 对照。</p>
+<h2>6. 注意</h2>
+<ul><li><code>remove</code> 是破坏性操作：会删依赖、改 patch 文件。先 <code>--dry-run</code> 再 <code>--yes</code>；</li><li>官方 bundle 自带的 patch 行（如 <code>@deepseek-ai/dsh-base</code> 内部的工具行）<strong>不是</strong>孤儿——audit 只对 profile/home 层报孤儿；</li><li>本插件仓库：github.com/zoahdev/dsh-unplug（npm: dsh-unplug）。</li></ul>
+<footer>By zoahdev · 2026-08-19 · evidence-first, every command verified</footer>
+</div>
+</body>
+</html>
